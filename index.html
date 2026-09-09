@@ -365,20 +365,14 @@
 
                 if (!title || !url) return this.showToast("Judul dan URL absolut diperlukan.", "error");
 
-                // --- MESIN PARSER PINTAR GOOGLE DRIVE ---
+                // --- MESIN PARSER PINTAR GOOGLE DRIVE (REVISI MUTLAK) ---
                 const driveMatch = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
                 if (driveMatch && driveMatch[1]) {
                     const driveId = driveMatch[1];
-                    if (type === 'image') {
-                        // Ubah link share G-Drive menjadi link Direct Image
-                        url = `https://drive.google.com/uc?export=view&id=${driveId}`;
-                        this.showToast("Link Google Drive (Gambar) berhasil dikonversi.", "info");
-                    } else if (type === 'video' || type === 'iframe') {
-                        // Paksa menjadi iframe untuk video G-Drive agar tidak dicekal CORS
-                        url = `https://drive.google.com/file/d/${driveId}/preview`;
-                        type = 'iframe';
-                        this.showToast("Link Google Drive (Video) dikonversi menjadi iFrame.", "info");
-                    }
+                    // PERINTAH MUTLAK: Semua link Drive (Gambar/Video) dipaksa menjadi Iframe
+                    url = `https://drive.google.com/file/d/${driveId}/preview`;
+                    type = 'iframe';
+                    this.showToast("Link Google Drive ditangkap. Dimutasi menjadi iFrame Sandbox.", "info");
                 }
                 // ----------------------------------------
 
