@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Omniscient Media Previewer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #e2e8f0; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #1e293b; }
+        ::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 4px; }
+        .glass-panel { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .no-cursor { cursor: none !important; }
+        
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideLeft { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes zoomIn { from { transform: scale(0.85); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        @keyframes blurIn { from { filter: blur(20px); opacity: 0; } to { filter: blur(0); opacity: 1; } }
+        
+        .trans-fade { animation: fadeIn 1.2s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+        .trans-slide { animation: slideLeft 1.2s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+        .trans-zoom { animation: zoomIn 1.2s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+        .trans-blur { animation: blurIn 1.2s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col overflow-x-hidden">
+
+    <!-- Navigation / Header -->
+    <header class="glass-panel sticky top-0 z-40 px-6 py-4 shadow-lg flex flex-wrap items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+            <i class="ph-duotone ph-infinity text-3xl text-cyan-400"></i>
+            <h1 class="text-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent tracking-wide">OMNISCIENT</h1>
+        </div>
+        
+        <div class="flex gap-2 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
+            <button onclick="App.toggleView('gallery')" id="btnGallery" class="px-4 py-2 rounded-lg text-sm font-medium transition-all bg-blue-600 text-white shadow-lg shadow-blue-500/30 flex items-center gap-2">
+                <i class="ph-bold ph-squares-four"></i> Gallery
+            </button>
+            <button onclick="App.toggleView('add')" id="btnAdd" class="px-4 py-2 rounded-lg text-sm font-medium transition-all bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center gap-2">
+                <i class="ph-bold ph-plus"></i> Add Media
+            </button>
+            <button onclick="App.startSlideshow()" class="px-4 py-2 rounded-lg text-sm font-medium transition-all bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-500/30 flex items-center gap-2 ml-auto sm:ml-4">
+                <i class="ph-fill ph-play-circle text-lg"></i> Play Preview
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 p-6 relative">
+        
+        <!-- View: Gallery -->
+        <div id="viewGallery" class="block">
+            <div id="mediaGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <!-- Media Items Rendered Here -->
+            </div>
+            
+            <div id="emptyState" class="hidden flex-col items-center justify-center py-20 text-slate-500">
+                <i class="ph-duotone ph-ghost text-6xl mb-4"></i>
+                <p class="text-lg">Kekosongan. Tidak ada entitas media.</p>
+            </div>
+        </div>
+
+        <!-- View: Add Form -->
+        <div id="viewAdd" class="hidden max-w-2xl mx-auto glass-panel p-6 sm:p-8 rounded-2xl">
+            <h2 class="text-2xl font-bold mb-6 text-white border-b border-slate-700 pb-4">Injeksi Media Baru</h2>
+            
+            <div class="space-y-5">
+                <div>
+                    <label class="block text-sm font-medium text-slate-400 mb-1">Judul Media</label>
+                    <input type="text" id="inputTitle" placeholder="Misal: Cinematic Intro" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all">
+                </div>
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-400 mb-1">Tipe Media</label>
+                        <select id="inputType" onchange="App.handleTypeChange()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-cyan-500 transition-all appearance-none">
+                            <option value="image">Gambar (URL)</option>
+                            <option value="video">Video (URL MP4)</option>
+                            <option value="youtube">YouTube (ID Video)</option>
+                            <option value="iframe">Website / Web App (URL)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-400 mb-1">Durasi Transisi (Detik)</label>
+                        <input type="number" id="inputDuration" value="5" min="1" max="3600" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-cyan-500 transition-all">
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label class="block text-sm font-medium text-slate-400 mb-1">Efek Transisi Masuk</label>
+                        <select id="inputTransition" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-cyan-500 transition-all appearance-none">
+                            <option value="fade">Fade In (Lembut)</option>
+                            <option value="slide">Slide Left (Geser Kiri)</option>
+                            <option value="zoom">Zoom In (Mendekat)</option>
+                            <option value="blur">Blur Reveal (Fokus)</option>
+                            <option value="random">Acak (Random)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-slate-400 mb-1">Sumber URL / ID</label>
+                    <input type="text" id="inputUrl" placeholder="https://... atau ID YouTube (ex: dQw4w9WgXcQ)" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-cyan-500 transition-all">
+                    <p class="text-xs text-slate-500 mt-2"><i class="ph-fill ph-info"></i> Untuk YouTube, cukup masukkan ID video yang ada setelah v=</p>
+                </div>
+                
+                <button onclick="App.addMedia()" class="w-full py-4 mt-4 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-bold rounded-xl shadow-lg shadow-cyan-500/25 transition-all transform hover:-translate-y-0.5 active:translate-y-0">
+                    Suntikkan ke Database
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- View: Slideshow Fullscreen (Cinematic Zero-UI) -->
+    <div id="viewSlideshow" class="fixed inset-0 z-[100] bg-black hidden flex-col items-center justify-center opacity-0 transition-opacity duration-500 select-none">
+        
+        <!-- Shield Overlay: Menangkap event mouse di atas iframe -->
+        <div id="slideInteractionShield" class="absolute inset-0 z-[101] bg-transparent"></div>
+
+        <!-- HUD Wrapper (Auto-hide UI untuk Tampilan Clean) -->
+        <div id="slideshowHUD" class="absolute inset-0 z-[102] pointer-events-none transition-opacity duration-500 opacity-0 flex flex-col justify-between">
+            
+            <!-- Top Bar: Progress & Timer -->
+            <div>
+                <!-- Progress bar temporalis -->
+                <div class="w-full h-1.5 bg-slate-900/80">
+                    <div id="slideProgress" class="h-full bg-cyan-500 w-0 shadow-[0_0_10px_rgba(6,182,212,0.8)]"></div>
+                </div>
+                
+                <div class="flex justify-end p-6 gap-4">
+                    <div class="bg-black/70 text-cyan-400 px-4 py-2 rounded-lg backdrop-blur-md border border-white/10 font-mono flex items-center gap-2 pointer-events-auto shadow-lg">
+                        <i class="ph-duotone ph-timer text-xl animate-pulse"></i> 
+                        <span id="slideTimer" class="text-lg font-bold w-8 text-center">5s</span>
+                    </div>
+                    <!-- KIOSK MODE: Tombol Close (X) dilenyapkan untuk mengunci akses -->
+                </div>
+            </div>
+
+            <!-- Bottom Bar: Title -->
+            <div class="p-6">
+                <div class="inline-block bg-black/70 backdrop-blur-md border border-white/10 px-6 py-3 rounded-xl pointer-events-auto shadow-xl max-w-full">
+                    <h2 id="slideTitle" class="text-white text-xl sm:text-2xl font-bold truncate">Title</h2>
+                </div>
+            </div>
+        </div>
+
+        <!-- Render Layer -->
+        <div id="slideContent" class="w-full h-full flex items-center justify-center p-0 z-[100]">
+            <!-- Media Injected Here -->
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toastContainer" class="fixed bottom-6 right-6 z-[200] flex flex-col gap-3 pointer-events-none"></div>
+
+    <script type="module">
+        // ATURAN HUKUM MUTLAK: IS_PREVIEW SWITCH
+        const is_preview = false; 
+
+        // Firebase Configuration Block (Isi jika is_preview = false)
+        const firebaseConfig = {
+  apiKey: "AIzaSyA8XREeEtq3K0c7melRj1Y2xgRvlhEMAjk",
+  authDomain: "gen-lang-client-0756249566.firebaseapp.com",
+  projectId: "gen-lang-client-0756249566",
+  storageBucket: "gen-lang-client-0756249566.firebasestorage.app",
+  messagingSenderId: "883275008498",
+  appId: "1:883275008498:web:76b77d6020c29e0c02436b",
+  measurementId: "G-VT430BGSL8"
+        };
+
+        // Arsitektur Utama
+        window.App = {
+            // State
+            currentView: 'gallery',
+            currentItems: [],
+            
+            // Kiosk State (Security Override)
+            spacebarCount: 0,
+            spacebarTimer: null,
+
+            // Slideshow State
+            slideshowInterval: null,
+            slideshowTimeout: null,
+            hudTimer: null,
+            currentSlideIndex: 0,
+
+            // Data Simulasi
+            mockData: [
+                { id: 'm1', title: 'Deep Space Nebula', type: 'image', url: 'https://images.unsplash.com/photo-1462331940025-496dfbfc7564?auto=format&fit=crop&w=2000&q=80', duration: 6, transition: 'fade' },
+                { id: 'm2', title: 'Ocean Waves (Video)', type: 'video', url: 'https://cdn.pixabay.com/video/2020/05/11/38701-419730598_tiny.mp4', duration: 10, transition: 'zoom' },
+                { id: 'm3', title: 'Cyberpunk Aesthetic', type: 'image', url: 'https://images.unsplash.com/photo-1515630278258-407f66498911?auto=format&fit=crop&w=2000&q=80', duration: 5, transition: 'slide' },
+                { id: 'm4', title: 'Lofi Girl (YouTube)', type: 'youtube', url: 'jfKfPfyJRdk', duration: 15, transition: 'blur' },
+                { id: 'm5', title: 'Wikipedia (Website)', type: 'iframe', url: 'https://en.wikipedia.org/wiki/Main_Page', duration: 8, transition: 'zoom' },
+                { id: 'm6', title: 'GitHub Pages (Web App)', type: 'iframe', url: 'https://hakimel.github.io/reveal.js/', duration: 15, transition: 'slide' }
+            ],
+
+            init: function() {
+                // Anti-Refresh State Loss
+                const savedView = localStorage.getItem('omni_last_view') || 'gallery';
+                this.toggleView(savedView);
+                
+                this.setupSlideshowEvents();
+
+                if (is_preview) {
+                    this.showToast("System initialized in Mock Mode.", "info");
+                    this.currentItems = [...this.mockData];
+                    this.renderGallery();
+                    
+                    // KIOSK MODE: Auto-play instan saat sistem online (delay 500ms agar DOM siap)
+                    setTimeout(() => {
+                        this.startSlideshow(0);
+                    }, 500);
+                } else {
+                    // Logic Firebase di sini (di-skip untuk mode preview)
+                    this.showToast("Firebase Mode Active.", "success");
+                }
+            },
+
+            toggleView: function(viewName) {
+                this.currentView = viewName;
+                localStorage.setItem('omni_last_view', viewName);
+                
+                // Reset styling
+                document.getElementById('btnGallery').className = "px-4 py-2 rounded-lg text-sm font-medium transition-all bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center gap-2";
+                document.getElementById('btnAdd').className = "px-4 py-2 rounded-lg text-sm font-medium transition-all bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center gap-2";
+                
+                document.getElementById('viewGallery').classList.add('hidden');
+                document.getElementById('viewAdd').classList.add('hidden');
+
+                if (viewName === 'gallery') {
+                    document.getElementById('btnGallery').className = "px-4 py-2 rounded-lg text-sm font-medium transition-all bg-blue-600 text-white shadow-lg shadow-blue-500/30 flex items-center gap-2";
+                    document.getElementById('viewGallery').classList.remove('hidden');
+                    this.renderGallery();
+                } else if (viewName === 'add') {
+                    document.getElementById('btnAdd').className = "px-4 py-2 rounded-lg text-sm font-medium transition-all bg-blue-600 text-white shadow-lg shadow-blue-500/30 flex items-center gap-2";
+                    document.getElementById('viewAdd').classList.remove('hidden');
+                }
+            },
+
+            handleTypeChange: function() {
+                const type = document.getElementById('inputType').value;
+                const urlInput = document.getElementById('inputUrl');
+                if (type === 'youtube') {
+                    urlInput.placeholder = "ID Video YouTube (ex: dQw4w9WgXcQ)";
+                } else if (type === 'video') {
+                    urlInput.placeholder = "URL Video MP4 (ex: https://.../video.mp4)";
+                } else if (type === 'iframe') {
+                    urlInput.placeholder = "URL Website (ex: https://id.wikipedia.org/)";
+                } else {
+                    urlInput.placeholder = "URL Gambar (ex: https://.../image.jpg)";
+                }
+            },
+
+            addMedia: function() {
+                const title = document.getElementById('inputTitle').value.trim();
+                const type = document.getElementById('inputType').value;
+                const url = document.getElementById('inputUrl').value.trim();
+                const duration = parseInt(document.getElementById('inputDuration').value) || 5;
+                const transition = document.getElementById('inputTransition').value;
+
+                if (!title || !url) return this.showToast("Judul dan URL absolut diperlukan.", "error");
+
+                const newItem = {
+                    id: 'item_' + Date.now(),
+                    title, type, url, duration, transition
+                };
+
+                if (is_preview) {
+                    this.currentItems.unshift(newItem);
+                    this.showToast("Media diinjeksi ke memory (Mock).", "success");
+                    this.toggleView('gallery');
+                    // Reset form
+                    document.getElementById('inputTitle').value = '';
+                    document.getElementById('inputUrl').value = '';
+                    document.getElementById('inputDuration').value = '5';
+                }
+            },
+
+            renderGallery: function() {
+                const grid = document.getElementById('mediaGrid');
+                const empty = document.getElementById('emptyState');
+                grid.innerHTML = '';
+
+                if (this.currentItems.length === 0) {
+                    empty.classList.remove('hidden');
+                    empty.classList.add('flex');
+                    return;
+                }
+                
+                empty.classList.add('hidden');
+                empty.classList.remove('flex');
+
+                this.currentItems.forEach((item, index) => {
+                    let thumbHtml = '';
+                    if (item.type === 'youtube') {
+                        thumbHtml = `<img src="https://img.youtube.com/vi/${item.url}/maxresdefault.jpg" onerror="this.src='https://img.youtube.com/vi/${item.url}/hqdefault.jpg'" class="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-500">
+                                     <div class="absolute inset-0 flex items-center justify-center bg-black/20"><i class="ph-fill ph-youtube-logo text-5xl text-red-500 drop-shadow-md"></i></div>`;
+                    } else if (item.type === 'video') {
+                        thumbHtml = `<video src="${item.url}" class="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-500" muted preload="metadata"></video>
+                                     <div class="absolute inset-0 flex items-center justify-center bg-black/20"><i class="ph-fill ph-video-camera text-4xl text-white drop-shadow-md"></i></div>`;
+                    } else if (item.type === 'iframe') {
+                        thumbHtml = `<div class="w-full h-48 bg-slate-800 flex items-center justify-center group-hover:scale-105 transition-transform duration-500">
+                                        <i class="ph-duotone ph-globe text-6xl text-cyan-400"></i>
+                                     </div>`;
+                    } else {
+                        thumbHtml = `<img src="${item.url}" class="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-500">`;
+                    }
+
+                    const card = document.createElement('div');
+                    card.className = "glass-panel rounded-xl overflow-hidden group cursor-pointer hover:border-cyan-500/50 transition-colors shadow-lg flex flex-col";
+                    card.onclick = () => {
+                        this.startSlideshow(index);
+                    };
+                    card.innerHTML = `
+                        <div class="relative overflow-hidden bg-black h-48">
+                            ${thumbHtml}
+                            <div class="absolute top-2 right-2 bg-black/70 backdrop-blur text-xs font-mono px-2 py-1 rounded text-cyan-300 border border-white/10">
+                                <i class="ph-bold ph-timer"></i> ${item.duration}s
+                            </div>
+                        </div>
+                        <div class="p-4 flex-1 flex flex-col justify-between">
+                            <h3 class="font-bold text-white truncate text-lg">${item.title}</h3>
+                            <div class="flex items-center justify-between mt-3 text-xs text-slate-400 uppercase tracking-wider font-semibold">
+                                <div class="flex items-center gap-3">
+                                    <span>${item.type}</span>
+                                    <span class="text-cyan-400 border-l border-slate-700 pl-3"><i class="ph-bold ph-magic-wand"></i> ${item.transition || 'fade'}</span>
+                                </div>
+                                <button onclick="event.stopPropagation(); App.deleteItem('${item.id}')" class="text-red-400 hover:text-red-300 bg-red-400/10 hover:bg-red-400/20 px-2 py-1 rounded transition-colors">
+                                    <i class="ph-bold ph-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    grid.appendChild(card);
+                });
+            },
+
+            deleteItem: function(id) {
+                if(is_preview) {
+                    this.currentItems = this.currentItems.filter(i => i.id !== id);
+                    this.renderGallery();
+                    this.showToast("Entitas dihapus dari memory.", "info");
+                }
+            },
+
+            setupSlideshowEvents: function() {
+                const view = document.getElementById('viewSlideshow');
+                const shield = document.getElementById('slideInteractionShield');
+                
+                // Menangkap event dari shield transparan (bekerja walau ada iframe)
+                const triggerHUD = () => this.showHUD();
+                shield.addEventListener('mousemove', triggerHUD);
+                shield.addEventListener('mousedown', triggerHUD);
+                shield.addEventListener('touchstart', triggerHUD);
+                
+                // Jika kursor bergerak di tombol HUD, reset timer juga
+                document.getElementById('slideshowHUD').addEventListener('mousemove', triggerHUD);
+
+                // KIOSK OVERRIDE ENGINE: Deteksi 3x Spacebar beruntun
+                document.addEventListener('keydown', (e) => {
+                    const isSlideshowActive = !document.getElementById('viewSlideshow').classList.contains('hidden');
+                    
+                    if (isSlideshowActive && e.code === 'Space') {
+                        e.preventDefault(); // Mencegah scrolling web secara paksa
+                        this.spacebarCount++;
+                        
+                        clearTimeout(this.spacebarTimer);
+                        
+                        // Reset hitungan ke nol jika jeda antar spasi lebih dari 1 detik (1000ms)
+                        this.spacebarTimer = setTimeout(() => {
+                            this.spacebarCount = 0;
+                        }, 1000); 
+
+                        // Eksekusi Pintu Belakang (Backdoor)
+                        if (this.spacebarCount >= 3) {
+                            this.spacebarCount = 0;
+                            this.closeSlideshow();
+                            this.showToast("SECURITY OVERRIDE: Akses Administrator Terbuka.", "success");
+                        }
+                    }
+                });
+            },
+
+            showHUD: function() {
+                const hud = document.getElementById('slideshowHUD');
+                const view = document.getElementById('viewSlideshow');
+                if(!hud || !view) return;
+
+                // Tampilkan HUD dan kembalikan kursor
+                hud.classList.remove('opacity-0');
+                view.classList.remove('no-cursor');
+                
+                clearTimeout(this.hudTimer);
+                
+                // Sembunyikan HUD setelah 2.5 detik idle
+                this.hudTimer = setTimeout(() => {
+                    hud.classList.add('opacity-0');
+                    view.classList.add('no-cursor'); // Eksekusi penyembunyian kursor absolut
+                }, 2500); 
+            },
+
+            startSlideshow: function(startIndex = 0) {
+                if (!this.currentItems || this.currentItems.length === 0) {
+                    return this.showToast("Tidak ada entitas media untuk diputar.", "error");
+                }
+                
+                this.currentSlideIndex = startIndex;
+                const view = document.getElementById('viewSlideshow');
+                view.classList.remove('hidden');
+                
+                // Trigger reflow untuk animasi fade-in
+                void view.offsetWidth;
+                view.classList.remove('opacity-0');
+                
+                this.showHUD();
+                this.playSlide(this.currentSlideIndex);
+            },
+
+            playSlide: function(index) {
+                // Loop ke awal jika sudah selesai
+                if (index >= this.currentItems.length) {
+                    this.currentSlideIndex = 0;
+                    index = 0; 
+                    // Atau gunakan this.closeSlideshow() jika ingin berhenti setelah loop 1 kali
+                }
+                
+                this.currentSlideIndex = index;
+                const item = this.currentItems[index];
+                
+                // Validasi dan setup durasi
+                const durationSeconds = parseInt(item.duration) > 0 ? parseInt(item.duration) : 5;
+                let timeLeft = durationSeconds;
+                
+                const contentContainer = document.getElementById('slideContent');
+                document.getElementById('slideTitle').textContent = item.title;
+                document.getElementById('slideTimer').textContent = timeLeft + 's';
+
+                let activeTransition = item.transition || 'fade';
+                if (activeTransition === 'random') {
+                    const fx = ['fade', 'slide', 'zoom', 'blur'];
+                    activeTransition = fx[Math.floor(Math.random() * fx.length)];
+                }
+
+                let mediaHtml = '';
+                if (item.type === 'youtube') {
+                    mediaHtml = `<iframe class="w-full h-full border-none pointer-events-none" src="https://www.youtube.com/embed/${item.url}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&showinfo=0" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
+                } else if (item.type === 'video') {
+                    mediaHtml = `<video class="w-full h-full object-contain bg-black" autoplay muted><source src="${item.url}"></video>`;
+                } else if (item.type === 'iframe') {
+                    mediaHtml = `<iframe class="w-full h-full border-none bg-white pointer-events-auto" src="${item.url}" sandbox="allow-same-origin allow-scripts allow-popups allow-forms" title="${item.title}"></iframe>`;
+                } else {
+                    mediaHtml = `<img class="w-full h-full object-contain" src="${item.url}" alt="${item.title}">`;
+                }
+                
+                // Injeksi dengan div layer transisi
+                contentContainer.innerHTML = `<div class="w-full h-full trans-${activeTransition}">${mediaHtml}</div>`;
+
+                // Reset dan jalankan Progress Bar secara presisi
+                const progressBar = document.getElementById('slideProgress');
+                progressBar.style.transition = 'none'; // Matikan transisi untuk reset
+                progressBar.style.width = '0%';
+                
+                // Beri jeda kecil agar DOM mendeteksi reset width=0 sebelum memulai transisi linear
+                setTimeout(() => {
+                    progressBar.style.transition = `width ${durationSeconds}s linear`;
+                    progressBar.style.width = '100%';
+                }, 50);
+
+                // Bersihkan timer sebelumnya (Penting!)
+                clearInterval(this.slideshowInterval);
+                clearTimeout(this.slideshowTimeout);
+
+                // Timer Digital HUD
+                this.slideshowInterval = setInterval(() => {
+                    timeLeft--;
+                    if (timeLeft >= 0) {
+                        document.getElementById('slideTimer').textContent = timeLeft + 's';
+                    }
+                }, 1000);
+
+                // Eksekusi Pindah Slide
+                this.slideshowTimeout = setTimeout(() => {
+                    this.playSlide(this.currentSlideIndex + 1);
+                }, durationSeconds * 1000);
+            },
+
+            closeSlideshow: function() {
+                const view = document.getElementById('viewSlideshow');
+                view.classList.add('opacity-0');
+                
+                clearInterval(this.slideshowInterval);
+                clearTimeout(this.slideshowTimeout);
+                clearTimeout(this.hudTimer);
+                
+                setTimeout(() => {
+                    view.classList.add('hidden');
+                    document.getElementById('slideContent').innerHTML = ''; // Hentikan playback video/iframe
+                    view.classList.remove('no-cursor'); // Kembalikan kursor
+                }, 500); // Sinkron dengan durasi transisi CSS
+            },
+
+            showToast: function(msg, type = "info") {
+                const container = document.getElementById('toastContainer');
+                const toast = document.createElement('div');
+                
+                let bgColor = "bg-slate-800 border-slate-700 text-white";
+                let icon = "<i class='ph-fill ph-info text-blue-400'></i>";
+                
+                if(type === "error") {
+                    bgColor = "bg-red-950 border-red-900 text-red-100";
+                    icon = "<i class='ph-fill ph-warning-circle text-red-500'></i>";
+                } else if(type === "success") {
+                    bgColor = "bg-emerald-950 border-emerald-900 text-emerald-100";
+                    icon = "<i class='ph-fill ph-check-circle text-emerald-500'></i>";
+                }
+
+                toast.className = `flex items-center gap-3 px-4 py-3 rounded-lg border shadow-2xl transform transition-all duration-300 translate-x-[120%] ${bgColor}`;
+                toast.innerHTML = `${icon} <span class="text-sm font-medium">${msg}</span>`;
+                
+                container.appendChild(toast);
+                
+                // Animate In
+                setTimeout(() => toast.classList.remove('translate-x-[120%]'), 10);
+                
+                // Animate Out & Remove
+                setTimeout(() => {
+                    toast.classList.add('translate-x-[120%]');
+                    setTimeout(() => toast.remove(), 300);
+                }, 3000);
+            }
+        };
+
+        window.onload = () => {
+            App.init();
+        };
+    </script>
+</body>
+</html>
