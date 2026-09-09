@@ -65,7 +65,7 @@
 
         <!-- View: Add Form -->
         <div id="viewAdd" class="hidden max-w-2xl mx-auto glass-panel p-6 sm:p-8 rounded-2xl">
-            <h2 class="text-2xl font-bold mb-6 text-white border-b border-slate-700 pb-4">Injeksi Media Baru</h2>
+            <h2 id="formTitle" class="text-2xl font-bold mb-6 text-white border-b border-slate-700 pb-4">Injeksi Media Baru</h2>
             
             <div class="space-y-5">
                 <div>
@@ -97,6 +97,16 @@
                             <option value="random">Acak (Random)</option>
                         </select>
                     </div>
+                    
+                    <div class="sm:col-span-2 mt-2 p-4 bg-emerald-900/20 border border-emerald-700/50 rounded-lg">
+                        <label class="flex items-center gap-3 cursor-pointer">
+                            <input type="checkbox" id="inputIsPrayer" class="w-6 h-6 rounded border-slate-600 bg-slate-900 text-emerald-500 focus:ring-emerald-500">
+                            <div>
+                                <span class="block text-sm font-bold text-emerald-400">Jadikan Media Waktu Sholat</span>
+                                <span class="block text-xs text-slate-400">Media ini akan mengambil alih layar sepenuhnya pada H-15 Menit hingga H+30 Menit jadwal sholat (Total 45 Menit).</span>
+                            </div>
+                        </label>
+                    </div>
                 </div>
 
                 <div>
@@ -106,7 +116,7 @@
                 </div>
                 
                 <button onclick="App.addMedia()" class="w-full py-4 mt-4 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-bold rounded-xl shadow-lg shadow-cyan-500/25 transition-all transform hover:-translate-y-0.5 active:translate-y-0">
-                    Suntikkan ke Database
+                    <span id="submitBtnText">Suntikkan ke Database</span>
                 </button>
             </div>
         </div>
@@ -174,6 +184,7 @@
             // State
             currentView: 'gallery',
             currentItems: [],
+            editingId: null,
             
             // Kiosk State (Security Override)
             spacebarCount: 0,
@@ -185,6 +196,10 @@
             hudTimer: null,
             currentSlideIndex: 0,
 
+            // API Waktu Sholat State
+            prayerJadwal: null,
+            isPrayerModeActive: false,
+
             // Data Simulasi
             mockData: [
                 { id: 'm1', title: 'Deep Space Nebula', type: 'image', url: 'https://images.unsplash.com/photo-1462331940025-496dfbfc7564?auto=format&fit=crop&w=2000&q=80', duration: 6, transition: 'fade' },
@@ -192,7 +207,8 @@
                 { id: 'm3', title: 'Cyberpunk Aesthetic', type: 'image', url: 'https://images.unsplash.com/photo-1515630278258-407f66498911?auto=format&fit=crop&w=2000&q=80', duration: 5, transition: 'slide' },
                 { id: 'm4', title: 'Lofi Girl (YouTube)', type: 'youtube', url: 'jfKfPfyJRdk', duration: 15, transition: 'blur' },
                 { id: 'm5', title: 'Wikipedia (Website)', type: 'iframe', url: 'https://en.wikipedia.org/wiki/Main_Page', duration: 8, transition: 'zoom' },
-                { id: 'm6', title: 'GitHub Pages (Web App)', type: 'iframe', url: 'https://hakimel.github.io/reveal.js/', duration: 15, transition: 'slide' }
+                { id: 'm6', title: 'GitHub Pages (Web App)', type: 'iframe', url: 'https://hakimel.github.io/reveal.js/', duration: 15, transition: 'slide' },
+                { id: 'm7', title: '⚠️ Peringatan Waktu Sholat', type: 'image', url: 'https://images.unsplash.com/photo-1591143825838-89c09c372652?auto=format&fit=crop&w=2000&q=80', duration: 10, transition: 'fade', isPrayer: true }
             ],
 
             init: function() {
@@ -201,6 +217,8 @@
                 this.toggleView(savedView);
                 
                 this.setupSlideshowEvents();
+                
+                this.fetchPrayerTimes(); // Panggil sinkronisasi MyQuran API
 
                 if (is_preview) {
                     this.showToast("System initialized in Mock Mode.", "info");
@@ -231,11 +249,26 @@
                 if (viewName === 'gallery') {
                     document.getElementById('btnGallery').className = "px-4 py-2 rounded-lg text-sm font-medium transition-all bg-blue-600 text-white shadow-lg shadow-blue-500/30 flex items-center gap-2";
                     document.getElementById('viewGallery').classList.remove('hidden');
+                    this.resetForm();
                     this.renderGallery();
                 } else if (viewName === 'add') {
                     document.getElementById('btnAdd').className = "px-4 py-2 rounded-lg text-sm font-medium transition-all bg-blue-600 text-white shadow-lg shadow-blue-500/30 flex items-center gap-2";
                     document.getElementById('viewAdd').classList.remove('hidden');
                 }
+            },
+
+            resetForm: function() {
+                document.getElementById('inputTitle').value = '';
+                document.getElementById('inputType').value = 'image';
+                document.getElementById('inputUrl').value = '';
+                document.getElementById('inputDuration').value = '5';
+                document.getElementById('inputTransition').value = 'fade';
+                document.getElementById('inputIsPrayer').checked = false;
+                
+                document.getElementById('formTitle').innerText = "Injeksi Media Baru";
+                document.getElementById('submitBtnText').innerText = "Suntikkan ke Database";
+                this.editingId = null;
+                this.handleTypeChange();
             },
 
             handleTypeChange: function() {
@@ -258,23 +291,52 @@
                 const url = document.getElementById('inputUrl').value.trim();
                 const duration = parseInt(document.getElementById('inputDuration').value) || 5;
                 const transition = document.getElementById('inputTransition').value;
+                const isPrayer = document.getElementById('inputIsPrayer').checked;
 
                 if (!title || !url) return this.showToast("Judul dan URL absolut diperlukan.", "error");
 
-                const newItem = {
-                    id: 'item_' + Date.now(),
-                    title, type, url, duration, transition
-                };
-
                 if (is_preview) {
-                    this.currentItems.unshift(newItem);
-                    this.showToast("Media diinjeksi ke memory (Mock).", "success");
+                    if (this.editingId) {
+                        // Mode Update / Edit
+                        const index = this.currentItems.findIndex(i => i.id === this.editingId);
+                        if(index > -1) {
+                            this.currentItems[index] = { ...this.currentItems[index], title, type, url, duration, transition, isPrayer };
+                            this.showToast("Modifikasi entitas berhasil direkam.", "success");
+                        }
+                    } else {
+                        // Mode Injeksi Baru
+                        const newItem = {
+                            id: 'item_' + Date.now(),
+                            title, type, url, duration, transition, isPrayer
+                        };
+                        this.currentItems.unshift(newItem);
+                        this.showToast("Media diinjeksi ke memory (Mock).", "success");
+                    }
+                    
                     this.toggleView('gallery');
-                    // Reset form
-                    document.getElementById('inputTitle').value = '';
-                    document.getElementById('inputUrl').value = '';
-                    document.getElementById('inputDuration').value = '5';
                 }
+            },
+
+            editItem: function(id) {
+                const item = this.currentItems.find(i => i.id === id);
+                if(!item) return;
+
+                this.editingId = id;
+                
+                // Menanamkan data ke dalam form
+                document.getElementById('inputTitle').value = item.title;
+                document.getElementById('inputType').value = item.type;
+                document.getElementById('inputUrl').value = item.url;
+                document.getElementById('inputDuration').value = item.duration;
+                document.getElementById('inputTransition').value = item.transition || 'fade';
+                document.getElementById('inputIsPrayer').checked = item.isPrayer || false;
+
+                // Mengubah Persona Form menjadi Mode Edit
+                document.getElementById('formTitle').innerText = "Modifikasi Entitas Media";
+                document.getElementById('submitBtnText').innerText = "Perbarui Database";
+
+                this.handleTypeChange();
+                this.toggleView('add');
             },
 
             renderGallery: function() {
@@ -318,6 +380,8 @@
                             <div class="absolute top-2 right-2 bg-black/70 backdrop-blur text-xs font-mono px-2 py-1 rounded text-cyan-300 border border-white/10">
                                 <i class="ph-bold ph-timer"></i> ${item.duration}s
                             </div>
+                            
+                            ${item.isPrayer ? `<div class="absolute top-2 left-2 bg-emerald-600/90 backdrop-blur text-xs font-bold px-2 py-1 rounded text-white shadow-lg flex items-center gap-1"><i class="ph-fill ph-mosque"></i> SHOLAT</div>` : ''}
                         </div>
                         <div class="p-4 flex-1 flex flex-col justify-between">
                             <h3 class="font-bold text-white truncate text-lg">${item.title}</h3>
@@ -326,9 +390,14 @@
                                     <span>${item.type}</span>
                                     <span class="text-cyan-400 border-l border-slate-700 pl-3"><i class="ph-bold ph-magic-wand"></i> ${item.transition || 'fade'}</span>
                                 </div>
-                                <button onclick="event.stopPropagation(); App.deleteItem('${item.id}')" class="text-red-400 hover:text-red-300 bg-red-400/10 hover:bg-red-400/20 px-2 py-1 rounded transition-colors">
-                                    <i class="ph-bold ph-trash"></i>
-                                </button>
+                                <div class="flex items-center gap-2">
+                                    <button onclick="event.stopPropagation(); App.editItem('${item.id}')" class="text-blue-400 hover:text-blue-300 bg-blue-400/10 hover:bg-blue-400/20 px-2 py-1 rounded transition-colors" title="Edit Media">
+                                        <i class="ph-bold ph-pencil-simple"></i>
+                                    </button>
+                                    <button onclick="event.stopPropagation(); App.deleteItem('${item.id}')" class="text-red-400 hover:text-red-300 bg-red-400/10 hover:bg-red-400/20 px-2 py-1 rounded transition-colors" title="Hapus Media">
+                                        <i class="ph-bold ph-trash"></i>
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     `;
@@ -343,6 +412,76 @@
                     this.showToast("Entitas dihapus dari memory.", "info");
                 }
             },
+
+            // --- MESIN TEMPORAL WAKTU SHOLAT (MYQURAN API) ---
+            fetchPrayerTimes: async function() {
+                try {
+                    const today = new Date();
+                    const year = today.getFullYear();
+                    const month = String(today.getMonth() + 1).padStart(2, '0');
+                    const day = String(today.getDate()).padStart(2, '0');
+                    
+                    // ID 1708 = Kota Banjarmasin (Referensi API MyQuran v2)
+                    const res = await fetch(`https://api.myquran.com/v2/sholat/jadwal/2113/${year}/${month}/${day}`);
+                    const data = await res.json();
+                    
+                    if(data.status) {
+                        this.prayerJadwal = data.data.jadwal;
+                        this.showToast(`Waktu Astral (${data.data.lokasi}) Tersinkronisasi.`, "success");
+                        this.startPrayerMonitor();
+                    }
+                } catch(e) {
+                    console.error("Gagal sinkronisasi API Sholat", e);
+                    this.showToast("Gagal memuat jadwal dari MyQuran API.", "error");
+                }
+            },
+
+            startPrayerMonitor: function() {
+                // Denyut Pengecekan Real-time (Setiap 10 detik)
+                setInterval(() => {
+                    if(!this.prayerJadwal) return;
+                    
+                    const now = new Date();
+                    const currentMins = (now.getHours() * 60) + now.getMinutes();
+                    
+                    const prayerTimes = [
+                        this.prayerJadwal.subuh,
+                        this.prayerJadwal.dzuhur,
+                        this.prayerJadwal.ashar,
+                        this.prayerJadwal.maghrib,
+                        this.prayerJadwal.isya
+                    ];
+
+                    let isTimeNow = false;
+                    for(let timeStr of prayerTimes) {
+                        if(!timeStr || timeStr === "-") continue;
+                        const [h, m] = timeStr.split(':').map(Number);
+                        const targetMins = (h * 60) + m;
+                        
+                        // Override Aktif: H-15 Menit sampai H+30 Menit (Total 45 Menit)
+                        if(currentMins >= (targetMins - 15) && currentMins < (targetMins + 30)) {
+                            isTimeNow = true;
+                            break;
+                        }
+                    }
+
+                    // Transisi Paksa (Override Interupsi)
+                    if(isTimeNow && !this.isPrayerModeActive) {
+                        this.isPrayerModeActive = true;
+                        this.showToast("WAKTU SHOLAT: Mengambil alih layar absolut.", "info");
+                        if(!document.getElementById('viewSlideshow').classList.contains('hidden')) {
+                            this.startSlideshow(0); 
+                        }
+                    } else if(!isTimeNow && this.isPrayerModeActive) {
+                        this.isPrayerModeActive = false;
+                        this.showToast("WAKTU NORMAL: Menanggalkan kuncian sholat.", "success");
+                        if(!document.getElementById('viewSlideshow').classList.contains('hidden')) {
+                            this.startSlideshow(0); 
+                        }
+                    }
+                }, 10000); 
+            },
+            // -----------------------------------------
 
             setupSlideshowEvents: function() {
                 const view = document.getElementById('viewSlideshow');
@@ -418,15 +557,28 @@
             },
 
             playSlide: function(index) {
-                // Loop ke awal jika sudah selesai
-                if (index >= this.currentItems.length) {
+                // Filter Mode Temporal: Jika Override Aktif, paksa hanya mainkan entitas Sholat
+                let activeItems = this.currentItems;
+                if(this.isPrayerModeActive) {
+                    const prayerMedia = this.currentItems.filter(i => i.isPrayer);
+                    if(prayerMedia.length > 0) {
+                        activeItems = prayerMedia;
+                    }
+                }
+
+                // Validasi kepunahan media
+                if (!activeItems || activeItems.length === 0) {
+                    return this.closeSlideshow();
+                }
+
+                // Loop ke awal jika array habis
+                if (index >= activeItems.length) {
                     this.currentSlideIndex = 0;
                     index = 0; 
-                    // Atau gunakan this.closeSlideshow() jika ingin berhenti setelah loop 1 kali
                 }
                 
                 this.currentSlideIndex = index;
-                const item = this.currentItems[index];
+                const item = activeItems[index];
                 
                 // Validasi dan setup durasi
                 const durationSeconds = parseInt(item.duration) > 0 ? parseInt(item.duration) : 5;
