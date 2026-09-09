@@ -107,6 +107,16 @@
                             </div>
                         </label>
                     </div>
+
+                    <div class="sm:col-span-2 mt-2 p-4 bg-orange-900/20 border border-orange-700/50 rounded-lg">
+                        <label class="flex items-center gap-3 cursor-pointer">
+                            <input type="checkbox" id="inputIsMuted" class="w-6 h-6 rounded border-slate-600 bg-slate-900 text-orange-500 focus:ring-orange-500">
+                            <div>
+                                <span class="block text-sm font-bold text-orange-400">Bisukan Audio (Mute)</span>
+                                <span class="block text-xs text-slate-400">Centang opsi ini jika Anda ingin Video/YouTube diputar membisu (tanpa suara).</span>
+                            </div>
+                        </label>
+                    </div>
                 </div>
 
                 <div>
@@ -167,10 +177,10 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // ATURAN HUKUM MUTLAK: IS_PREVIEW SWITCH
-        const is_preview = false; 
+        const is_preview = true; 
 
         // Firebase Configuration Block (Isi jika is_preview = false)
         const firebaseConfig = {
@@ -210,6 +220,7 @@
             slideshowTimeout: null,
             hudTimer: null,
             currentSlideIndex: 0,
+            draggedItemIndex: null,
 
             // API Waktu Sholat State
             prayerJadwal: null,
@@ -260,8 +271,13 @@
                                 items.push({ id: doc.id, ...doc.data() });
                             });
                             
-                            // Eksekusi Sorting di Memory (Didasarkan waktu injeksi)
-                            items.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+                            // Eksekusi Sorting di Memory (Prioritas Urutan Drag, lalu Waktu)
+                            items.sort((a, b) => {
+                                if (a.sortOrder !== undefined && b.sortOrder !== undefined) {
+                                    return a.sortOrder - b.sortOrder; // Sesuai tarikan drag & drop
+                                }
+                                return (b.createdAt || 0) - (a.createdAt || 0); // Fallback: Terlama di bawah
+                            });
                             
                             this.currentItems = items;
                             this.renderGallery();
@@ -316,6 +332,7 @@
                 document.getElementById('inputDuration').value = '5';
                 document.getElementById('inputTransition').value = 'fade';
                 document.getElementById('inputIsPrayer').checked = false;
+                document.getElementById('inputIsMuted').checked = false;
                 
                 document.getElementById('formTitle').innerText = "Injeksi Media Baru";
                 document.getElementById('submitBtnText').innerText = "Suntikkan ke Database";
@@ -344,6 +361,7 @@
                 const duration = parseInt(document.getElementById('inputDuration').value) || 5;
                 const transition = document.getElementById('inputTransition').value;
                 const isPrayer = document.getElementById('inputIsPrayer').checked;
+                const isMuted = document.getElementById('inputIsMuted').checked;
 
                 if (!title || !url) return this.showToast("Judul dan URL absolut diperlukan.", "error");
 
@@ -352,34 +370,37 @@
                         // Mode Update / Edit
                         const index = this.currentItems.findIndex(i => i.id === this.editingId);
                         if(index > -1) {
-                            this.currentItems[index] = { ...this.currentItems[index], title, type, url, duration, transition, isPrayer };
+                            this.currentItems[index] = { ...this.currentItems[index], title, type, url, duration, transition, isPrayer, isMuted };
                             this.showToast("Modifikasi entitas berhasil direkam.", "success");
                         }
                     } else {
                         // Mode Injeksi Baru
+                        const newSortOrder = this.currentItems.length > 0 ? Math.max(...this.currentItems.map(i => i.sortOrder || 0)) + 1 : 0;
                         const newItem = {
                             id: 'item_' + Date.now(),
-                            title, type, url, duration, transition, isPrayer,
+                            title, type, url, duration, transition, isPrayer, isMuted,
+                            sortOrder: newSortOrder,
                             createdAt: Date.now()
                         };
-                        this.currentItems.unshift(newItem);
+                        this.currentItems.push(newItem);
                         this.showToast("Media diinjeksi ke memory (Mock).", "success");
                     }
                     
                     this.toggleView('gallery');
                 } else {
                     // FIREBASE UPLINK LOGIC
-                    this.transmitDataToCloud(title, type, url, duration, transition, isPrayer);
+                    const newSortOrder = this.currentItems.length > 0 ? Math.max(...this.currentItems.map(i => i.sortOrder || 0)) + 1 : 0;
+                    this.transmitDataToCloud(title, type, url, duration, transition, isPrayer, isMuted, newSortOrder);
                 }
             },
 
-            transmitDataToCloud: async function(title, type, url, duration, transition, isPrayer) {
+            transmitDataToCloud: async function(title, type, url, duration, transition, isPrayer, isMuted, sortOrder) {
                 try {
                     const btnText = document.getElementById('submitBtnText');
                     const originalText = btnText.innerText;
                     btnText.innerText = "Transmisi ke Cloud...";
                     
-                    const payload = { title, type, url, duration, transition, isPrayer };
+                    const payload = { title, type, url, duration, transition, isPrayer, isMuted };
                     
                     if (this.editingId) {
                         // Perbarui data yang sudah ada
@@ -389,6 +410,7 @@
                     } else {
                         // Injeksi data baru
                         payload.createdAt = Date.now();
+                        payload.sortOrder = sortOrder;
                         await addDoc(mediaCol, payload);
                         this.showToast("Media berhasil ter-injeksi ke penjuru Cloud.", "success");
                     }
@@ -415,6 +437,7 @@
                 document.getElementById('inputDuration').value = item.duration;
                 document.getElementById('inputTransition').value = item.transition || 'fade';
                 document.getElementById('inputIsPrayer').checked = item.isPrayer || false;
+                document.getElementById('inputIsMuted').checked = item.isMuted || false;
 
                 // Mengubah Persona Form menjadi Mode Edit
                 document.getElementById('formTitle').innerText = "Modifikasi Entitas Media";
@@ -455,17 +478,36 @@
                     }
 
                     const card = document.createElement('div');
-                    card.className = "glass-panel rounded-xl overflow-hidden group cursor-pointer hover:border-cyan-500/50 transition-colors shadow-lg flex flex-col";
+                    card.className = "glass-panel rounded-xl overflow-hidden group cursor-pointer hover:border-cyan-500/50 transition-all duration-300 shadow-lg flex flex-col";
+                    card.draggable = true;
+
+                    // MESIN MANIPULASI SPASIAL (DRAG AND DROP)
+                    card.ondragstart = (e) => {
+                        this.draggedItemIndex = index;
+                        e.dataTransfer.effectAllowed = 'move';
+                        e.dataTransfer.setData('text/plain', index);
+                        setTimeout(() => card.classList.add('opacity-40', 'border-cyan-500', 'scale-95'), 0);
+                    };
+                    card.ondragend = () => card.classList.remove('opacity-40', 'border-cyan-500', 'scale-95');
+                    card.ondragover = (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; card.classList.add('border-2', 'border-dashed', 'border-cyan-400'); };
+                    card.ondragleave = () => card.classList.remove('border-2', 'border-dashed', 'border-cyan-400');
+                    card.ondrop = (e) => { e.preventDefault(); card.classList.remove('border-2', 'border-dashed', 'border-cyan-400'); this.handleDrop(index); };
+
                     card.onclick = () => {
                         this.startSlideshow(index);
                     };
+
+                    const muteBadge = item.isMuted 
+                        ? `<div class="absolute top-10 right-2 bg-orange-600/90 backdrop-blur text-xs font-bold px-2 py-1 rounded text-white shadow-lg flex items-center gap-1"><i class="ph-bold ph-speaker-slash"></i> Muted</div>`
+                        : (item.type === 'video' || item.type === 'youtube' ? `<div class="absolute top-10 right-2 bg-blue-600/90 backdrop-blur text-xs font-bold px-2 py-1 rounded text-white shadow-lg flex items-center gap-1"><i class="ph-bold ph-speaker-high"></i> Suara</div>` : '');
+
                     card.innerHTML = `
-                        <div class="relative overflow-hidden bg-black h-48">
+                        <div class="relative overflow-hidden bg-black h-48 cursor-grab active:cursor-grabbing">
                             ${thumbHtml}
-                            <div class="absolute top-2 right-2 bg-black/70 backdrop-blur text-xs font-mono px-2 py-1 rounded text-cyan-300 border border-white/10">
+                            <div class="absolute top-2 right-2 bg-black/70 backdrop-blur text-xs font-mono px-2 py-1 rounded text-cyan-300 border border-white/10 flex items-center gap-1">
                                 <i class="ph-bold ph-timer"></i> ${item.duration}s
                             </div>
-                            
+                            ${muteBadge}
                             ${item.isPrayer ? `<div class="absolute top-2 left-2 bg-emerald-600/90 backdrop-blur text-xs font-bold px-2 py-1 rounded text-white shadow-lg flex items-center gap-1"><i class="ph-fill ph-mosque"></i> SHOLAT</div>` : ''}
                         </div>
                         <div class="p-4 flex-1 flex flex-col justify-between">
@@ -505,6 +547,41 @@
                         console.error("Kegagalan Destruksi:", error);
                         this.showToast("Penghapusan ditolak oleh server Cloud.", "error");
                     }
+                }
+            },
+
+            handleDrop: async function(targetIndex) {
+                if (this.draggedItemIndex === null || this.draggedItemIndex === targetIndex) return;
+
+                // Reorder di memori (Swap / Geser Array)
+                const draggedItem = this.currentItems[this.draggedItemIndex];
+                this.currentItems.splice(this.draggedItemIndex, 1);
+                this.currentItems.splice(targetIndex, 0, draggedItem);
+
+                // Re-assign urutan (sortOrder) secara merata
+                this.currentItems.forEach((item, idx) => {
+                    item.sortOrder = idx;
+                });
+
+                this.renderGallery();
+
+                if (is_preview) {
+                    this.showToast("Posisi media diatur ulang (Mock).", "success");
+                    return;
+                }
+
+                // Batch Transmisi ke Firebase (Memperbarui banyak dokumen serentak)
+                try {
+                    const batch = writeBatch(db);
+                    this.currentItems.forEach((item) => {
+                        const docRef = doc(mediaCol, item.id);
+                        batch.update(docRef, { sortOrder: item.sortOrder });
+                    });
+                    await batch.commit();
+                    this.showToast("Urutan baru tersinkronisasi ke Cloud.", "success");
+                } catch (error) {
+                    console.error("Gagal sinkronisasi posisi:", error);
+                    this.showToast("Gagal menyimpan urutan ke server.", "error");
                 }
             },
 
@@ -690,10 +767,13 @@
                 }
 
                 let mediaHtml = '';
+                const muteParam = item.isMuted ? '&mute=1' : '';
+                const mutedAttr = item.isMuted ? 'muted' : '';
+
                 if (item.type === 'youtube') {
-                    mediaHtml = `<iframe class="w-full h-full border-none pointer-events-none" src="https://www.youtube.com/embed/${item.url}?autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&showinfo=0" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
+                    mediaHtml = `<iframe class="w-full h-full border-none pointer-events-none" src="https://www.youtube.com/embed/${item.url}?autoplay=1&controls=0&modestbranding=1&rel=0&showinfo=0${muteParam}" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
                 } else if (item.type === 'video') {
-                    mediaHtml = `<video class="w-full h-full object-contain bg-black" autoplay muted><source src="${item.url}"></video>`;
+                    mediaHtml = `<video class="w-full h-full object-contain bg-black" autoplay ${mutedAttr}><source src="${item.url}"></video>`;
                 } else if (item.type === 'iframe') {
                     mediaHtml = `<iframe class="w-full h-full border-none bg-white pointer-events-auto" src="${item.url}" sandbox="allow-same-origin allow-scripts allow-popups allow-forms" title="${item.title}"></iframe>`;
                 } else {
