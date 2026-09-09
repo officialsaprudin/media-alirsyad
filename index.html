@@ -165,6 +165,10 @@
     <div id="toastContainer" class="fixed bottom-6 right-6 z-[200] flex flex-col gap-3 pointer-events-none"></div>
 
     <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
         // ATURAN HUKUM MUTLAK: IS_PREVIEW SWITCH
         const is_preview = false; 
 
@@ -178,6 +182,17 @@
   appId: "1:883275008498:web:76b77d6020c29e0c02436b",
   measurementId: "G-VT430BGSL8"
         };
+
+        let app, db, auth, mediaCol;
+
+        if (!is_preview) {
+            app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
+            // Standar Arsitektur Database Root
+            const appId = typeof __app_id !== 'undefined' ? __app_id : 'omni-media-app';
+            mediaCol = collection(db, 'artifacts', appId, 'public', 'data', 'media');
+        }
 
         // Arsitektur Utama
         window.App = {
@@ -211,7 +226,7 @@
                 { id: 'm7', title: '⚠️ Peringatan Waktu Sholat', type: 'image', url: 'https://images.unsplash.com/photo-1591143825838-89c09c372652?auto=format&fit=crop&w=2000&q=80', duration: 10, transition: 'fade', isPrayer: true }
             ],
 
-            init: function() {
+            init: async function() {
                 // Anti-Refresh State Loss
                 const savedView = localStorage.getItem('omni_last_view') || 'gallery';
                 this.toggleView(savedView);
@@ -225,13 +240,50 @@
                     this.currentItems = [...this.mockData];
                     this.renderGallery();
                     
-                    // KIOSK MODE: Auto-play instan saat sistem online (delay 500ms agar DOM siap)
+                    // KIOSK MODE: Auto-play instan saat sistem online
                     setTimeout(() => {
                         this.startSlideshow(0);
                     }, 500);
                 } else {
-                    // Logic Firebase di sini (di-skip untuk mode preview)
-                    this.showToast("Firebase Mode Active.", "success");
+                    // LOGIKA FIREBASE SESUNGGUHNYA 
+                    try {
+                        this.showToast("Menghubungkan ke Cloud Singularity...", "info");
+                        
+                        // 1. Otorisasi Anonim ke Firebase (Syarat Mutlak)
+                        await signInAnonymously(auth);
+                        this.showToast("Koneksi Tembus. Menyinkronkan data...", "success");
+
+                        // 2. Mesin Real-time Snapshot (0 Latency Sync)
+                        onSnapshot(mediaCol, (snapshot) => {
+                            const items = [];
+                            snapshot.forEach((doc) => {
+                                items.push({ id: doc.id, ...doc.data() });
+                            });
+                            
+                            // Eksekusi Sorting di Memory (Didasarkan waktu injeksi)
+                            items.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+                            
+                            this.currentItems = items;
+                            this.renderGallery();
+                            
+                            // Auto-play instan untuk perangkat kosong
+                            const viewSlideshow = document.getElementById('viewSlideshow');
+                            if(viewSlideshow.classList.contains('hidden') && items.length > 0) {
+                                setTimeout(() => {
+                                    if(viewSlideshow.classList.contains('hidden')) {
+                                        this.startSlideshow(0);
+                                    }
+                                }, 1500);
+                            }
+                        }, (error) => {
+                            console.error("Sinkronisasi Layar Gagal:", error);
+                            this.showToast("Terjadi anomali saat membaca data Cloud.", "error");
+                        });
+
+                    } catch (error) {
+                        console.error("Akses Firebase Gagal:", error);
+                        this.showToast("Akses ke database ditolak oleh server.", "error");
+                    }
                 }
             },
 
@@ -307,13 +359,46 @@
                         // Mode Injeksi Baru
                         const newItem = {
                             id: 'item_' + Date.now(),
-                            title, type, url, duration, transition, isPrayer
+                            title, type, url, duration, transition, isPrayer,
+                            createdAt: Date.now()
                         };
                         this.currentItems.unshift(newItem);
                         this.showToast("Media diinjeksi ke memory (Mock).", "success");
                     }
                     
                     this.toggleView('gallery');
+                } else {
+                    // FIREBASE UPLINK LOGIC
+                    this.transmitDataToCloud(title, type, url, duration, transition, isPrayer);
+                }
+            },
+
+            transmitDataToCloud: async function(title, type, url, duration, transition, isPrayer) {
+                try {
+                    const btnText = document.getElementById('submitBtnText');
+                    const originalText = btnText.innerText;
+                    btnText.innerText = "Transmisi ke Cloud...";
+                    
+                    const payload = { title, type, url, duration, transition, isPrayer };
+                    
+                    if (this.editingId) {
+                        // Perbarui data yang sudah ada
+                        const docRef = doc(mediaCol, this.editingId);
+                        await updateDoc(docRef, payload);
+                        this.showToast("Modifikasi di Cloud tersinkronisasi.", "success");
+                    } else {
+                        // Injeksi data baru
+                        payload.createdAt = Date.now();
+                        await addDoc(mediaCol, payload);
+                        this.showToast("Media berhasil ter-injeksi ke penjuru Cloud.", "success");
+                    }
+                    
+                    this.toggleView('gallery');
+                    btnText.innerText = originalText;
+                } catch (error) {
+                    console.error("Kegagalan Transmisi:", error);
+                    this.showToast("Transmisi Gagal. Periksa Firestore Rules Anda.", "error");
+                    document.getElementById('submitBtnText').innerText = this.editingId ? "Perbarui Database" : "Suntikkan ke Database";
                 }
             },
 
@@ -405,11 +490,21 @@
                 });
             },
 
-            deleteItem: function(id) {
+            deleteItem: async function(id) {
                 if(is_preview) {
                     this.currentItems = this.currentItems.filter(i => i.id !== id);
                     this.renderGallery();
                     this.showToast("Entitas dihapus dari memory.", "info");
+                } else {
+                    // FIREBASE DESTRUCTION LOGIC
+                    try {
+                        const docRef = doc(mediaCol, id);
+                        await deleteDoc(docRef);
+                        this.showToast("Entitas ditiadakan dari Cloud selamanya.", "success");
+                    } catch (error) {
+                        console.error("Kegagalan Destruksi:", error);
+                        this.showToast("Penghapusan ditolak oleh server Cloud.", "error");
+                    }
                 }
             },
 
@@ -421,7 +516,7 @@
                     const month = String(today.getMonth() + 1).padStart(2, '0');
                     const day = String(today.getDate()).padStart(2, '0');
                     
-                    // ID 1708 = Kota Banjarmasin (Referensi API MyQuran v2)
+                    // ID 2113 = Kota Banjarmasin (Update Kordinat Spasial)
                     const res = await fetch(`https://api.myquran.com/v2/sholat/jadwal/2113/${year}/${month}/${day}`);
                     const data = await res.json();
                     
