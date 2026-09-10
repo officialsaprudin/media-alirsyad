@@ -222,6 +222,14 @@
             initialLoadComplete: false,
 
             init: async function() {
+                // MUAT YOUTUBE IFRAME API UNTUK LOOPING SEMPURNA TANPA KEDIP
+                if (!document.getElementById('yt-api-script')) {
+                    const tag = document.createElement('script');
+                    tag.id = 'yt-api-script';
+                    tag.src = "https://www.youtube.com/iframe_api";
+                    document.head.appendChild(tag);
+                }
+
                 const savedView = localStorage.getItem('omni_last_view') || 'gallery';
                 this.toggleView(savedView);
                 this.setupSlideshowEvents();
@@ -610,21 +618,83 @@
                 let mediaHtml = '';
                 const muteParam = item.isMuted ? '&mute=1' : '';
                 const mutedAttr = item.isMuted ? 'muted' : '';
+                const ytPlayerId = 'yt-' + Date.now(); // ID Unik untuk API YouTube
 
                 if (item.type === 'youtube') {
                     let yId = item.url.includes('v=') ? item.url.split('v=')[1].split('&')[0] : (item.url.includes('youtu.be/') ? item.url.split('youtu.be/')[1].split('?')[0] : item.url);
-                    // INJEKSI TEMPORAL LOOPING YOUTUBE: Parameter playlist dan loop menahan video
-                    mediaHtml = `<iframe class="w-full h-full border-none pointer-events-none" src="https://www.youtube.com/embed/${yId}?autoplay=1&controls=0&modestbranding=1&rel=0&showinfo=0&loop=1&playlist=${yId}${muteParam}" allow="autoplay; encrypted-media" allowfullscreen></iframe>`;
+                    mediaHtml = `<div id="${ytPlayerId}" class="w-full h-full pointer-events-none scale-105"></div>`;
                 } else if (item.type === 'video') {
-                    // INJEKSI TEMPORAL LOOPING VIDEO: Atribut loop menahan video pendek
-                    mediaHtml = `<video class="w-full h-full object-contain bg-black" autoplay loop ${mutedAttr}><source src="${item.url}"></video>`;
+                    mediaHtml = `<video class="w-full h-full object-contain bg-black" autoplay loop playsinline ${mutedAttr} ontimeupdate="if(this.duration && this.duration - this.currentTime < 0.15) { this.currentTime = 0.05; this.play(); }"><source src="${item.url}"></video>`;
                 } else if (item.type === 'iframe') {
                     mediaHtml = `<iframe class="w-full h-full border-none bg-white pointer-events-auto" src="${item.url}" sandbox="allow-same-origin allow-scripts allow-popups allow-forms" title="${item.title}"></iframe>`;
                 } else {
-                    mediaHtml = `<img class="w-full h-full object-contain" src="${item.url}" alt="${item.title}">`;
+                    mediaHtml = `<img class="w-full h-full object-contain bg-black" src="${item.url}" alt="${item.title}">`;
                 }
                 
-                contentContainer.innerHTML = `<div class="w-full h-full trans-${activeTransition}">${mediaHtml}</div>`;
+                // --- ARSITEKTUR DOUBLE-BUFFERING (ANTI BLACK-SCREEN) ---
+                const newSlideLayer = document.createElement('div');
+                newSlideLayer.className = `slide-layer absolute inset-0 w-full h-full z-10 bg-black`;
+                newSlideLayer.innerHTML = mediaHtml;
+                
+                // Turunkan prioritas Z-Index layer lama agar tertimpa transisi secara halus
+                const oldLayers = contentContainer.querySelectorAll('.slide-layer');
+                oldLayers.forEach(layer => { layer.style.zIndex = '1'; });
+                
+                contentContainer.appendChild(newSlideLayer);
+
+                // Fungsi Pemicu Transisi (Hanya dieksekusi saat media baru sudah siap)
+                let transitionStarted = false;
+                const executeTransition = () => {
+                    if (transitionStarted) return;
+                    transitionStarted = true;
+                    newSlideLayer.style.opacity = ''; // Hapus kunci transparan
+                    newSlideLayer.classList.add(`trans-${activeTransition}`); // Mulai animasi
+                    
+                    // Bersihkan memori dari layer lama setelah animasi transisi selesai (1.5 detik)
+                    setTimeout(() => {
+                        oldLayers.forEach(layer => layer.remove());
+                    }, 1500);
+                };
+
+                // EKSEKUSI KHUSUS YOUTUBE (MENUNGGU RENDER FRAME PERTAMA)
+                if (item.type === 'youtube') {
+                    newSlideLayer.style.opacity = '0'; // Sembunyikan iframe yang masih hitam (loading)
+                    let yId = item.url.includes('v=') ? item.url.split('v=')[1].split('&')[0] : (item.url.includes('youtu.be/') ? item.url.split('youtu.be/')[1].split('?')[0] : item.url);
+                    setTimeout(() => {
+                        if (window.YT && window.YT.Player) {
+                            new YT.Player(ytPlayerId, {
+                                videoId: yId,
+                                playerVars: { 'autoplay': 1, 'controls': 0, 'modestbranding': 1, 'rel': 0, 'showinfo': 0, 'mute': item.isMuted ? 1 : 0, 'disablekb': 1, 'playsinline': 1, 'loop': 1, 'playlist': yId },
+                                events: {
+                                    'onReady': (e) => { 
+                                        e.target.playVideo(); 
+                                        const loopInterval = setInterval(() => {
+                                            if (!document.getElementById(ytPlayerId)) return clearInterval(loopInterval);
+                                            if (e.target.getCurrentTime && e.target.getDuration) {
+                                                const time = e.target.getCurrentTime();
+                                                const duration = e.target.getDuration();
+                                                if (duration > 1 && (duration - time) < 0.2) {
+                                                    e.target.seekTo(0.1, true);
+                                                }
+                                            }
+                                        }, 100);
+                                    },
+                                    'onStateChange': (e) => {
+                                        // PEMICU TRANSISI HANYA KETIKA VIDEO BENAR-BENAR BERJALAN (PLAYING)
+                                        if (e.data === YT.PlayerState.PLAYING) {
+                                            executeTransition();
+                                        }
+                                        if (e.data === YT.PlayerState.ENDED) { e.target.seekTo(0.1); e.target.playVideo(); }
+                                    }
+                                }
+                            });
+                            // Failsafe darurat jika internet putus
+                            setTimeout(executeTransition, 4000);
+                        }
+                    }, 50);
+                } else {
+                    executeTransition(); // Eksekusi transisi instan untuk Gambar & Video Lokal
+                }
 
                 const progressBar = document.getElementById('slideProgress');
                 progressBar.style.transition = 'none'; 
