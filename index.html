@@ -8,7 +8,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
         body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #e2e8f0; overflow-x: hidden; }
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #1e293b; }
@@ -17,22 +17,21 @@
         .glass-panel { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
         .no-cursor { cursor: none !important; }
         
-        /* Transisi Sinematik Kiosk */
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        .trans-fade { animation: fadeIn 1.2s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+        .trans-fade { animation: fadeIn 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
         
-        .slide-layer { transition: opacity 1.5s ease-in-out; }
+        .slide-layer { transition: opacity 1s ease-in-out; }
     </style>
 </head>
-<body class="min-h-screen flex flex-col">
+<body class="min-h-screen flex flex-col bg-[#0f172a]">
 
-    <!-- Navigation / Header -->
+    <!-- Navigation / Header (Persis Sesuai Tangkapan Layar) -->
     <header class="glass-panel sticky top-0 z-40 px-6 py-4 shadow-lg flex flex-wrap items-center justify-between gap-4">
         <div class="flex items-center gap-3">
             <i class="ph-duotone ph-infinity text-3xl text-cyan-400"></i>
             <div>
                 <h1 class="text-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent tracking-wide">OMNISCIENT</h1>
-                <p id="astralSyncStatus" class="text-[10px] text-emerald-400 font-mono">Menyinkronkan Kordinat Astral (2113)...</p>
+                <p id="astralSyncStatus" class="text-[10px] text-emerald-400 font-mono">Astral (BANJARMASIN 2113) Sinkron.</p>
             </div>
         </div>
         
@@ -50,15 +49,15 @@
     </header>
 
     <main class="flex-1 p-6 relative">
-        <!-- View: Gallery -->
+        <!-- View: Gallery (Kartu Sesuai Aslinya) -->
         <div id="viewGallery" class="block">
-            <div id="mediaGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                <!-- Media Items Rendered Here -->
+            <div id="mediaGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6 max-w-7xl mx-auto">
+                <!-- Media Items Disuntikkan secara dinamis di sini -->
             </div>
             
             <div id="emptyState" class="hidden flex-col items-center justify-center py-20 text-slate-500">
                 <i class="ph-duotone ph-ghost text-6xl mb-4"></i>
-                <p class="text-lg">Kekosongan. Tidak ada entitas media.</p>
+                <p class="text-lg">Kekosongan. Tidak ada entitas media terpasang.</p>
             </div>
         </div>
 
@@ -76,15 +75,15 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     <div>
                         <label class="block text-sm font-medium text-slate-400 mb-1">Tipe Media</label>
-                        <select id="inputType" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-cyan-500 transition-all appearance-none">
-                            <option value="image">Gambar (URL)</option>
-                            <option value="youtube">YouTube (URL / ID)</option>
-                            <option value="video">Video (URL MP4 / Langsung)</option>
+                        <select id="inputType" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-cyan-500 transition-all appearance-none cursor-pointer">
                             <option value="iframe">Website / Google Drive (URL)</option>
+                            <option value="video">Video (URL MP4 / Langsung)</option>
+                            <option value="youtube">YouTube (URL / ID)</option>
+                            <option value="image">Gambar (URL)</option>
                         </select>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-slate-400 mb-1">Durasi Slide (Detik)</label>
+                        <label class="block text-sm font-medium text-slate-400 mb-1">Durasi Transisi Slide (Detik)</label>
                         <input type="number" id="inputDuration" value="30" min="1" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-cyan-500 transition-all">
                     </div>
                     
@@ -93,7 +92,7 @@
                             <input type="checkbox" id="inputIsPrayer" class="w-6 h-6 rounded border-slate-600 bg-slate-900 text-emerald-500 focus:ring-emerald-500">
                             <div>
                                 <span class="block text-sm font-bold text-emerald-400">Jadikan Media Waktu Sholat</span>
-                                <span class="block text-xs text-slate-400">Ambil alih layar sepenuhnya pada H-15 hingga H+30 Menit jadwal sholat.</span>
+                                <span class="block text-xs text-slate-400">Media ini akan mengambil alih layar sepenuhnya pada H-5 Menit hingga H+15 Menit jadwal sholat (Total 20 Menit).</span>
                             </div>
                         </label>
                     </div>
@@ -103,7 +102,7 @@
                             <input type="checkbox" id="inputIsMuted" class="w-6 h-6 rounded border-slate-600 bg-slate-900 text-orange-500 focus:ring-orange-500">
                             <div>
                                 <span class="block text-sm font-bold text-orange-400">Bisukan Audio (Mute)</span>
-                                <span class="block text-xs text-slate-400">Membantu video otomatis diputar tanpa dicekal oleh keamanan browser.</span>
+                                <span class="block text-xs text-slate-400">Pilih ini jika Anda ingin video diputar membisu (menghindari blokir autoplay browser).</span>
                             </div>
                         </label>
                     </div>
@@ -112,7 +111,7 @@
                 <div>
                     <label class="block text-sm font-medium text-slate-400 mb-1">Sumber URL / ID</label>
                     <input type="text" id="inputUrl" placeholder="https://..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-cyan-500 transition-all">
-                    <p class="text-xs text-slate-500 mt-2"><i class="ph-fill ph-info"></i> Paste link Share Google Drive, GitHub Pages, atau YouTube di sini.</p>
+                    <p class="text-xs text-slate-500 mt-2"><i class="ph-fill ph-info"></i> Paste link Google Drive Share, web, atau YouTube di sini.</p>
                 </div>
                 
                 <button onclick="App.addMedia()" class="w-full py-4 mt-4 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-bold rounded-xl shadow-lg transition-transform transform hover:-translate-y-0.5">
@@ -121,6 +120,19 @@
             </div>
         </div>
     </main>
+
+    <!-- Custom Modal Dialog (Menggantikan confirm bawaan browser) -->
+    <div id="deleteModal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="glass-panel p-6 rounded-2xl max-w-sm w-full border border-red-500/30 text-center">
+            <i class="ph-duotone ph-warning-circle text-5xl text-red-500 mb-3"></i>
+            <h3 class="text-lg font-bold text-white mb-2">Hapus Entitas Media?</h3>
+            <p class="text-xs text-slate-400 mb-6">Entitas ini akan dihapus secara permanen dari sistem.</p>
+            <div class="flex gap-3 justify-center">
+                <button onclick="App.closeDeleteModal()" class="px-5 py-2.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 text-sm font-medium">Batal</button>
+                <button id="btnConfirmDelete" class="px-5 py-2.5 rounded-lg bg-red-600 text-white hover:bg-red-500 text-sm font-medium shadow-lg shadow-red-600/30">Hapus</button>
+            </div>
+        </div>
+    </div>
 
     <!-- View: Slideshow Fullscreen (Kiosk Mode) -->
     <div id="viewSlideshow" class="fixed inset-0 z-[100] bg-black hidden flex-col items-center justify-center select-none">
@@ -153,7 +165,7 @@
         </div>
 
         <!-- Render Layer -->
-        <div id="slideContent" class="w-full h-full flex items-center justify-center p-0 z-[100] relative">
+        <div id="slideContent" class="w-full h-full flex items-center justify-center p-0 z-[100] relative bg-black overflow-hidden">
             <!-- Media disuntikkan secara dinamis di sini -->
         </div>
     </div>
@@ -164,12 +176,13 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, writeBatch, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
         // ==========================================
         // SAKLAR ARSITEKTUR MUTLAK
         // ==========================================
-        // UBAH INI JADI false SAAT SUDAH DI GITHUB AGAR TERHUBUNG KE FIREBASE
+        // TRUE = Mode Preview (Mock data sesuai screenshot agar langsung tampil di editor)
+        // FALSE = Terhubung ke Database Firebase Cloud Anda secara real-time
         const is_preview = false; 
 
         // KREDENSIAL FIREBASE ASLI ANDA
@@ -187,21 +200,25 @@
         let app, db, auth, mediaCol;
 
         if (!is_preview) {
-            app = initializeApp(firebaseConfig);
-            db = getFirestore(app);
-            auth = getAuth(app);
-            // Standar aturan sistem: menggunakan path artifacts/id/public/data
-            mediaCol = collection(db, 'artifacts', omniAppId, 'public', 'data', 'media');
+            try {
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+                mediaCol = collection(db, 'artifacts', omniAppId, 'public', 'data', 'media');
+            } catch (err) {
+                console.error("Gagal inisialisasi Firebase:", err);
+            }
         }
 
         window.App = {
             currentView: 'gallery',
             currentItems: [],
             draggedItemIndex: null,
+            targetDeleteId: null,
             
             // Variabel Kiosk
             currentSlideIndex: 0,
-            currentPlayingId: null, // JANGKAR MEMORI: Mencegah Iframe dimuat ulang jika medianya sama
+            currentPlayingId: null, // JANGKAR MEMORI: Mencegah Iframe/Video dimuat ulang jika medianya sama
             slideshowInterval: null,
             slideshowTimeout: null,
             hudTimer: null,
@@ -209,14 +226,15 @@
             // Variabel Waktu Sholat
             prayerJadwal: null,
             isPrayerModeActive: false,
+            prayerInterval: null,
 
             init: async function() {
                 this.setupEvents();
                 this.fetchPrayerTimes();
 
                 if (is_preview) {
-                    this.showToast("Berjalan di Mode Offline (Preview).", "info");
-                    // Mock Data untuk tes
+                    this.showToast("Berjalan di Mode Preview (Mock Data).", "info");
+                    // Data Mock Presisi Sesuai Screenshot Asli Anda
                     this.currentItems = [
                         { id: 'm1', title: "Jadwal Sholat Live", type: "iframe", url: "https://officialsaprudin.github.io/JADWAL-SHOLAT/", duration: 30, isPrayer: true, isMuted: false, sortOrder: 0 },
                         { id: 'm2', title: "Profile Video (Loop)", type: "video", url: "https://www.w3schools.com/html/mov_bbb.mp4", duration: 25, isPrayer: false, isMuted: true, sortOrder: 1 },
@@ -236,7 +254,7 @@
                             this.renderGallery();
                         }, (error) => {
                             console.error("Gagal membaca Cloud:", error);
-                            this.showToast("Akses Ditolak. Pastikan Rules Firestore sudah dibuka.", "error");
+                            this.showToast("GERBANG TERKUNCI: Buka Firebase -> Firestore Rules -> Allow Read/Write.", "error");
                         });
                     } catch (error) {
                         this.showToast("Gagal Otorisasi Anonim.", "error");
@@ -265,7 +283,7 @@
             resetForm: function() {
                 document.getElementById('editId').value = '';
                 document.getElementById('inputTitle').value = '';
-                document.getElementById('inputType').value = 'image';
+                document.getElementById('inputType').value = 'iframe';
                 document.getElementById('inputUrl').value = '';
                 document.getElementById('inputDuration').value = '30';
                 document.getElementById('inputIsPrayer').checked = false;
@@ -286,7 +304,7 @@
 
                 if (!url) return this.showToast("URL tidak boleh kosong.", "error");
 
-                // PARSER GOOGLE DRIVE CERDAS: Otomatis memutus akses download dan mengubah jadi Iframe Preview
+                // PARSER GOOGLE DRIVE CERDAS
                 if (url.includes('drive.google.com/file/d/')) {
                     type = 'iframe';
                     url = url.replace(/\/view.*$/, '') + '/preview';
@@ -343,8 +361,22 @@
                 this.toggleView('add');
             },
 
-            deleteItem: async function(id) {
-                if(!confirm("Hapus entitas ini selamanya?")) return;
+            promptDelete: function(id) {
+                this.targetDeleteId = id;
+                document.getElementById('deleteModal').classList.remove('hidden');
+                document.getElementById('btnConfirmDelete').onclick = () => this.executeDelete();
+            },
+
+            closeDeleteModal: function() {
+                this.targetDeleteId = null;
+                document.getElementById('deleteModal').classList.add('hidden');
+            },
+
+            executeDelete: async function() {
+                const id = this.targetDeleteId;
+                if(!id) return;
+                this.closeDeleteModal();
+
                 if (is_preview) {
                     this.currentItems = this.currentItems.filter(i => i.id !== id);
                     this.renderGallery();
@@ -366,38 +398,38 @@
 
                 this.currentItems.forEach((item, index) => {
                     let thumb = '';
-                    if (item.type === 'youtube') thumb = `<div class="bg-red-900/50 w-full h-full flex items-center justify-center"><i class="ph-fill ph-youtube-logo text-5xl text-red-500"></i></div>`;
-                    else if (item.type === 'video') thumb = `<div class="bg-blue-900/50 w-full h-full flex items-center justify-center"><i class="ph-fill ph-video-camera text-5xl text-blue-400"></i></div>`;
-                    else if (item.type === 'iframe') thumb = `<div class="bg-cyan-900/50 w-full h-full flex items-center justify-center"><i class="ph-duotone ph-globe text-5xl text-cyan-400"></i></div>`;
+                    if (item.type === 'youtube') thumb = `<div class="bg-[#2a0e0e] w-full h-full flex items-center justify-center"><i class="ph-fill ph-youtube-logo text-5xl text-red-500"></i></div>`;
+                    else if (item.type === 'video') thumb = `<div class="bg-[#0b1b36] w-full h-full flex items-center justify-center"><i class="ph-fill ph-video-camera text-5xl text-blue-400"></i></div>`;
+                    else if (item.type === 'iframe') thumb = `<div class="bg-[#092535] w-full h-full flex items-center justify-center"><i class="ph-duotone ph-globe text-5xl text-cyan-400"></i></div>`;
                     else thumb = `<img src="${item.url}" class="w-full h-full object-cover">`;
 
                     const card = document.createElement('div');
                     card.className = "glass-panel rounded-xl overflow-hidden group shadow-lg flex flex-col cursor-grab active:cursor-grabbing border-2 border-transparent hover:border-cyan-500/50 transition-all duration-300";
                     card.draggable = true;
 
-                    // DRAG AND DROP LOGIC
-                    card.ondragstart = (e) => { this.draggedItemIndex = index; setTimeout(() => card.classList.add('opacity-50'), 0); };
+                    // DRAG AND DROP
+                    card.ondragstart = () => { this.draggedItemIndex = index; setTimeout(() => card.classList.add('opacity-50'), 0); };
                     card.ondragend = () => card.classList.remove('opacity-50');
                     card.ondragover = (e) => { e.preventDefault(); card.classList.add('border-cyan-400', 'border-dashed'); };
                     card.ondragleave = () => card.classList.remove('border-cyan-400', 'border-dashed');
                     card.ondrop = (e) => { e.preventDefault(); card.classList.remove('border-cyan-400', 'border-dashed'); this.handleDrop(index); };
 
                     card.innerHTML = `
-                        <div class="relative h-40 bg-black overflow-hidden" onclick="App.startSlideshow(${index})">
+                        <div class="relative h-44 bg-black overflow-hidden" onclick="App.startSlideshow(${index})">
                             ${thumb}
-                            <div class="absolute top-2 right-2 bg-black/70 backdrop-blur text-xs font-mono px-2 py-1 rounded text-cyan-300 flex items-center gap-1">
+                            <div class="absolute top-2.5 right-2.5 bg-black/70 backdrop-blur text-xs font-mono px-2.5 py-1 rounded-md text-cyan-300 flex items-center gap-1.5 border border-white/5">
                                 <i class="ph-bold ph-timer"></i> ${item.duration}s
                             </div>
-                            ${item.isMuted ? `<div class="absolute top-10 right-2 bg-orange-600/90 text-xs px-2 py-1 rounded text-white shadow-lg"><i class="ph-bold ph-speaker-slash"></i> Muted</div>` : ''}
-                            ${item.isPrayer ? `<div class="absolute top-2 left-2 bg-emerald-600 text-xs font-bold px-2 py-1 rounded text-white shadow-lg"><i class="ph-fill ph-mosque"></i> SHOLAT</div>` : ''}
+                            ${item.isMuted ? `<div class="absolute top-10 right-2.5 bg-orange-600/90 text-xs px-2.5 py-1 rounded-md text-white shadow-lg flex items-center gap-1 font-semibold"><i class="ph-bold ph-speaker-slash"></i> Muted</div>` : ''}
+                            ${item.isPrayer ? `<div class="absolute top-2.5 left-2.5 bg-emerald-600 text-xs font-bold px-2.5 py-1 rounded-md text-white shadow-lg flex items-center gap-1"><i class="ph-fill ph-mosque"></i> SHOLAT</div>` : ''}
                         </div>
                         <div class="p-4 flex-1 flex flex-col justify-between">
                             <h3 class="font-bold text-white truncate text-lg">${item.title}</h3>
                             <div class="flex justify-between items-center mt-4">
-                                <span class="text-xs text-slate-400 uppercase font-semibold">${item.type}</span>
+                                <span class="text-xs text-slate-400 uppercase font-bold tracking-wider">${item.type}</span>
                                 <div class="flex gap-2">
-                                    <button onclick="App.editItem('${item.id}')" class="text-blue-400 hover:bg-blue-400/20 px-2 py-1 rounded transition"><i class="ph-bold ph-pencil-simple"></i></button>
-                                    <button onclick="App.deleteItem('${item.id}')" class="text-red-400 hover:bg-red-400/20 px-2 py-1 rounded transition"><i class="ph-bold ph-trash"></i></button>
+                                    <button onclick="App.editItem('${item.id}')" class="text-blue-400 hover:bg-blue-400/20 p-1.5 rounded transition"><i class="ph-bold ph-pencil-simple text-lg"></i></button>
+                                    <button onclick="App.promptDelete('${item.id}')" class="text-red-400 hover:bg-red-400/20 p-1.5 rounded transition"><i class="ph-bold ph-trash text-lg"></i></button>
                                 </div>
                             </div>
                         </div>
@@ -431,11 +463,12 @@
                         document.getElementById('astralSyncStatus').innerText = "Astral (BANJARMASIN 2113) Sinkron.";
                         this.startPrayerMonitor();
                     }
-                } catch(e) { console.error(e); }
+                } catch(e) { console.error("Astral Sync Error:", e); }
             },
 
             startPrayerMonitor: function() {
-                setInterval(() => {
+                if(this.prayerInterval) clearInterval(this.prayerInterval);
+                const check = () => {
                     if(!this.prayerJadwal) return;
                     const now = new Date();
                     const currentMins = (now.getHours() * 60) + now.getMinutes();
@@ -446,23 +479,33 @@
                         if(!t || t === "-") continue;
                         const [h, min] = t.split(':').map(Number);
                         const targetMins = (h * 60) + min;
-                        // Jendela waktu: H-15 hingga H+30 (Total 45 Menit)
-                        if(currentMins >= (targetMins - 15) && currentMins < (targetMins + 30)) { isTimeNow = true; break; }
+                        
+                        // JENDELA WAKTU SHOLAT: H-5 hingga H+15 (Total 20 Menit Layar Diambil Alih)
+                        if(currentMins >= (targetMins - 5) && currentMins < (targetMins + 15)) {
+                            isTimeNow = true;
+                            break;
+                        }
                     }
 
                     if(isTimeNow && !this.isPrayerModeActive) {
                         this.isPrayerModeActive = true;
-                        this.showToast("WAKTU SHOLAT: Layar diambil alih otomatis.", "info");
-                        if(!document.getElementById('viewSlideshow').classList.contains('hidden')) this.startSlideshow(0); 
+                        this.showToast("WAKTU SHOLAT: Layar diambil alih otomatis (20 Menit).", "info");
+                        if(!document.getElementById('viewSlideshow').classList.contains('hidden')) {
+                            this.startSlideshow(0); 
+                        }
                     } else if(!isTimeNow && this.isPrayerModeActive) {
                         this.isPrayerModeActive = false;
-                        if(!document.getElementById('viewSlideshow').classList.contains('hidden')) this.startSlideshow(0); 
+                        if(!document.getElementById('viewSlideshow').classList.contains('hidden')) {
+                            this.startSlideshow(0); 
+                        }
                     }
-                }, 10000); // Cek setiap 10 detik
+                };
+
+                check();
+                this.prayerInterval = setInterval(check, 10000); // Radar berdenyut setiap 10 detik
             },
 
             setupEvents: function() {
-                // HUD Interaksi Mouse
                 const shield = document.getElementById('slideInteractionShield');
                 const triggerHUD = () => {
                     const hud = document.getElementById('slideshowHUD');
@@ -498,7 +541,6 @@
                 const view = document.getElementById('viewSlideshow');
                 view.classList.remove('hidden');
                 
-                // Reset Jangkar Memori agar rendering pertama selalu dieksekusi
                 this.currentPlayingId = null;
                 document.getElementById('slideContent').innerHTML = '';
 
@@ -507,7 +549,6 @@
 
             playSlide: function(index) {
                 let activeItems = this.currentItems;
-                // Filter Waktu Sholat
                 if(this.isPrayerModeActive) {
                     const prayerMedia = this.currentItems.filter(i => i.isPrayer);
                     if(prayerMedia.length > 0) activeItems = prayerMedia;
@@ -523,60 +564,64 @@
                 document.getElementById('slideTitle').textContent = item.title;
 
                 // =========================================================
-                // JANGKAR MEMORI (ANTI-RELOAD):
-                // Jika media yang mau diputar ID-nya sama dengan yang sedang tayang
-                // (misal karena cuma 1 video, atau cuma 1 jadwal sholat yang di-loop),
-                // maka JANGAN buat elemen HTML baru. Cukup ulang timer & progress bar-nya saja.
+                // JANGKAR MEMORI (ANTI-RELOAD / ANTI-BLANK):
+                // Jika media berikutnya sama persis dengan yang sedang tayang,
+                // lewati render HTML agar web/video tidak berkedip atau muat ulang!
                 // =========================================================
                 if (this.currentPlayingId === item.id) {
                     this.resetProgressBar(durationSeconds);
                     this.startSlideTimers(durationSeconds, index);
-                    return; // BYPASS RENDERING HTML
+                    return;
                 }
                 
-                // Set Jangkar Memori Baru
                 this.currentPlayingId = item.id;
 
                 // =========================================================
-                // ARSITEKTUR DOUBLE-BUFFERING (CROSSFADE):
-                // Mencegah layar hitam antar transisi slide yang berbeda
+                // DOUBLE-BUFFERING CROSSFADE (ANTI BLACK SCREEN)
                 // =========================================================
                 const contentContainer = document.getElementById('slideContent');
-                
-                // 1. Turunkan prioritas layer lama ke belakang
                 const oldLayers = contentContainer.querySelectorAll('.slide-layer');
                 oldLayers.forEach(layer => { layer.style.zIndex = '1'; });
 
-                // 2. Siapkan HTML Layer Baru
                 let mediaHtml = '';
                 const mutedAttr = item.isMuted ? 'muted' : '';
                 const ytMuteParam = item.isMuted ? '&mute=1' : '';
 
                 if (item.type === 'youtube') {
                     let yId = item.url.includes('v=') ? item.url.split('v=')[1].split('&')[0] : (item.url.includes('youtu.be/') ? item.url.split('youtu.be/')[1].split('?')[0] : item.url);
-                    // Parameter loop=1 dan playlist memastikan YouTube mengulang otomatis tanpa black screen internal
+                    // YouTube Gapless Temporal Looping
                     mediaHtml = `<iframe class="w-full h-full pointer-events-none scale-105" src="https://www.youtube.com/embed/${yId}?autoplay=1&controls=0&loop=1&playlist=${yId}${ytMuteParam}&modestbranding=1" allow="autoplay" frameborder="0"></iframe>`;
                 } else if (item.type === 'video') {
-                    // Atribut loop memastikan video lokal mengulang otomatis tanpa putus
-                    mediaHtml = `<video class="w-full h-full object-contain bg-black" src="${item.url}" autoplay loop ${mutedAttr}></video>`;
+                    // Video Lokal Seamless Looping
+                    mediaHtml = `<video class="w-full h-full object-contain bg-black" src="${item.url}" autoplay loop playsinline ${mutedAttr}></video>`;
                 } else if (item.type === 'iframe') {
-                    mediaHtml = `<iframe class="w-full h-full border-none bg-white" src="${item.url}" sandbox="allow-same-origin allow-scripts allow-popups"></iframe>`;
+                    mediaHtml = `<iframe class="w-full h-full border-none bg-black" src="${item.url}" sandbox="allow-same-origin allow-scripts allow-popups allow-forms"></iframe>`;
                 } else {
                     mediaHtml = `<img class="w-full h-full object-contain bg-black" src="${item.url}">`;
                 }
 
-                // 3. Suntikkan Layer Baru (Di Atas, tapi transparan/opacity-0)
                 const newLayer = document.createElement('div');
                 newLayer.className = `slide-layer absolute inset-0 w-full h-full z-10 bg-black opacity-0 trans-fade`;
                 newLayer.innerHTML = mediaHtml;
+
+                // Seamless looping handler untuk tag video (mencegah black frame saat loop)
+                const vidEl = newLayer.querySelector('video');
+                if (vidEl) {
+                    vidEl.ontimeupdate = () => {
+                        if (vidEl.duration && vidEl.currentTime > vidEl.duration - 0.15) {
+                            vidEl.currentTime = 0.02;
+                            vidEl.play();
+                        }
+                    };
+                }
+
                 contentContainer.appendChild(newLayer);
 
-                // 4. Hapus layer lama setelah transisi fade selesai (1.5 detik)
+                // Buang layer lama setelah transisi fade selesai
                 setTimeout(() => {
                     oldLayers.forEach(layer => layer.remove());
-                }, 1500);
+                }, 1000);
 
-                // Eksekusi Timer dan UI HUD
                 this.resetProgressBar(durationSeconds);
                 this.startSlideTimers(durationSeconds, index);
             },
@@ -586,7 +631,6 @@
                 pBar.style.transition = 'none'; 
                 pBar.style.width = '0%';
                 
-                // Beri jeda 50ms agar DOM merender 0% dulu, baru kita jalankan animasinya
                 setTimeout(() => {
                     pBar.style.transition = `width ${durationSeconds}s linear`;
                     pBar.style.width = '100%';
@@ -605,7 +649,6 @@
                     if (timeLeft >= 0) document.getElementById('slideTimer').textContent = timeLeft + 's';
                 }, 1000);
 
-                // Pindah ke slide berikutnya saat timer habis
                 this.slideshowTimeout = setTimeout(() => {
                     this.playSlide(currentIndex + 1);
                 }, durationSeconds * 1000);
@@ -619,18 +662,18 @@
                 clearTimeout(this.slideshowTimeout);
                 clearTimeout(this.hudTimer);
                 
-                this.currentPlayingId = null; // Reset jangkar
-                document.getElementById('slideContent').innerHTML = ''; // Hancurkan Iframe
+                this.currentPlayingId = null;
+                document.getElementById('slideContent').innerHTML = '';
             },
 
             showToast: function(msg, type = "info") {
                 const container = document.getElementById('toastContainer');
                 const t = document.createElement('div');
-                t.className = `px-4 py-3 rounded-lg border shadow-xl text-sm font-medium transition-transform transform translate-x-full ${type === 'error' ? 'bg-red-900 text-white' : (type === 'success' ? 'bg-emerald-800 text-white' : 'bg-slate-800 text-white')}`;
+                t.className = `px-4 py-3 rounded-lg border shadow-xl text-sm font-medium transition-transform transform translate-x-full ${type === 'error' ? 'bg-red-900/90 border-red-700 text-white' : (type === 'success' ? 'bg-emerald-900/90 border-emerald-700 text-white' : 'bg-slate-800/90 border-slate-700 text-white')}`;
                 t.textContent = msg;
                 container.appendChild(t);
                 setTimeout(() => t.classList.remove('translate-x-full'), 10);
-                setTimeout(() => { t.classList.add('translate-x-full'); setTimeout(() => t.remove(), 300); }, 3000);
+                setTimeout(() => { t.classList.add('translate-x-full'); setTimeout(() => t.remove(), 300); }, 3500);
             }
         };
 
