@@ -3,32 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Media Al-Irsyad</title>
+    <title>Omniscient Media Kiosk</title>
     <link rel="icon" type="image/png" href="LOGO MI.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #e2e8f0; }
+        body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #e2e8f0; overflow-x: hidden; }
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #1e293b; }
         ::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 4px; }
+        
         .glass-panel { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
         .no-cursor { cursor: none !important; }
         
-        /* Animasi Transisi Sinematik */
+        /* Transisi Sinematik Kiosk */
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes slideLeft { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-        @keyframes zoomIn { from { transform: scale(0.85); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-        @keyframes blurIn { from { filter: blur(20px); opacity: 0; } to { filter: blur(0); opacity: 1; } }
-        
         .trans-fade { animation: fadeIn 1.2s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
-        .trans-slide { animation: slideLeft 1.2s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
-        .trans-zoom { animation: zoomIn 1.2s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
-        .trans-blur { animation: blurIn 1.2s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+        
+        .slide-layer { transition: opacity 1.5s ease-in-out; }
     </style>
 </head>
-<body class="min-h-screen flex flex-col overflow-x-hidden">
+<body class="min-h-screen flex flex-col">
 
     <!-- Navigation / Header -->
     <header class="glass-panel sticky top-0 z-40 px-6 py-4 shadow-lg flex flex-wrap items-center justify-between gap-4">
@@ -42,10 +38,10 @@
         
         <div class="flex gap-2 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
             <button onclick="App.toggleView('gallery')" id="btnGallery" class="px-4 py-2 rounded-lg text-sm font-medium transition-all bg-blue-600 text-white shadow-lg shadow-blue-500/30 flex items-center gap-2">
-                <i class="ph-bold ph-squares-four"></i> Gallery
+                <i class="ph-bold ph-squares-four"></i> Galeri
             </button>
             <button onclick="App.toggleView('add')" id="btnAdd" class="px-4 py-2 rounded-lg text-sm font-medium transition-all bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center gap-2">
-                <i class="ph-bold ph-plus"></i> Add Media
+                <i class="ph-bold ph-plus"></i> Injeksi Media
             </button>
             <button onclick="App.startSlideshow(0)" class="px-4 py-2 rounded-lg text-sm font-medium transition-all bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-500/30 flex items-center gap-2 ml-auto sm:ml-4">
                 <i class="ph-fill ph-play-circle text-lg"></i> Play Preview
@@ -53,9 +49,7 @@
         </div>
     </header>
 
-    <!-- Main Content -->
     <main class="flex-1 p-6 relative">
-        
         <!-- View: Gallery -->
         <div id="viewGallery" class="block">
             <div id="mediaGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -71,36 +65,27 @@
         <!-- View: Add / Edit Form -->
         <div id="viewAdd" class="hidden max-w-2xl mx-auto glass-panel p-6 sm:p-8 rounded-2xl">
             <h2 id="formTitle" class="text-2xl font-bold mb-6 text-white border-b border-slate-700 pb-4">Injeksi Media Baru</h2>
+            <input type="hidden" id="editId" value="">
             
             <div class="space-y-5">
                 <div>
                     <label class="block text-sm font-medium text-slate-400 mb-1">Judul Media</label>
-                    <input type="text" id="inputTitle" placeholder="Misal: Cinematic Intro" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all">
+                    <input type="text" id="inputTitle" placeholder="Misal: Profil Madrasah" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-cyan-500 transition-all">
                 </div>
                 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
                     <div>
                         <label class="block text-sm font-medium text-slate-400 mb-1">Tipe Media</label>
-                        <select id="inputType" onchange="App.handleTypeChange()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-cyan-500 transition-all appearance-none">
+                        <select id="inputType" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-cyan-500 transition-all appearance-none">
                             <option value="image">Gambar (URL)</option>
-                            <option value="video">Video (URL MP4)</option>
                             <option value="youtube">YouTube (URL / ID)</option>
+                            <option value="video">Video (URL MP4 / Langsung)</option>
                             <option value="iframe">Website / Google Drive (URL)</option>
                         </select>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-slate-400 mb-1">Durasi Transisi (Detik)</label>
-                        <input type="number" id="inputDuration" value="15" min="1" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-cyan-500 transition-all">
-                    </div>
-                    <div class="sm:col-span-2">
-                        <label class="block text-sm font-medium text-slate-400 mb-1">Efek Transisi Masuk</label>
-                        <select id="inputTransition" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-cyan-500 transition-all appearance-none">
-                            <option value="fade">Fade In (Lembut)</option>
-                            <option value="slide">Slide Left (Geser Kiri)</option>
-                            <option value="zoom">Zoom In (Mendekat)</option>
-                            <option value="blur">Blur Reveal (Fokus)</option>
-                            <option value="random">Acak (Random)</option>
-                        </select>
+                        <label class="block text-sm font-medium text-slate-400 mb-1">Durasi Slide (Detik)</label>
+                        <input type="number" id="inputDuration" value="30" min="1" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-cyan-500 transition-all">
                     </div>
                     
                     <div class="sm:col-span-2 mt-2 p-4 bg-emerald-900/20 border border-emerald-700/50 rounded-lg">
@@ -108,7 +93,7 @@
                             <input type="checkbox" id="inputIsPrayer" class="w-6 h-6 rounded border-slate-600 bg-slate-900 text-emerald-500 focus:ring-emerald-500">
                             <div>
                                 <span class="block text-sm font-bold text-emerald-400">Jadikan Media Waktu Sholat</span>
-                                <span class="block text-xs text-slate-400">Media ini akan mengambil alih layar sepenuhnya pada H-15 Menit hingga H+30 Menit jadwal sholat.</span>
+                                <span class="block text-xs text-slate-400">Ambil alih layar sepenuhnya pada H-15 hingga H+30 Menit jadwal sholat.</span>
                             </div>
                         </label>
                     </div>
@@ -118,7 +103,7 @@
                             <input type="checkbox" id="inputIsMuted" class="w-6 h-6 rounded border-slate-600 bg-slate-900 text-orange-500 focus:ring-orange-500">
                             <div>
                                 <span class="block text-sm font-bold text-orange-400">Bisukan Audio (Mute)</span>
-                                <span class="block text-xs text-slate-400">Pilih ini jika Anda ingin video diputar membisu (menghindari blokir autoplay browser).</span>
+                                <span class="block text-xs text-slate-400">Membantu video otomatis diputar tanpa dicekal oleh keamanan browser.</span>
                             </div>
                         </label>
                     </div>
@@ -127,10 +112,10 @@
                 <div>
                     <label class="block text-sm font-medium text-slate-400 mb-1">Sumber URL / ID</label>
                     <input type="text" id="inputUrl" placeholder="https://..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-cyan-500 transition-all">
-                    <p class="text-xs text-slate-500 mt-2"><i class="ph-fill ph-info"></i> Paste link Google Drive Share, web, atau YouTube di sini.</p>
+                    <p class="text-xs text-slate-500 mt-2"><i class="ph-fill ph-info"></i> Paste link Share Google Drive, GitHub Pages, atau YouTube di sini.</p>
                 </div>
                 
-                <button onclick="App.addMedia()" class="w-full py-4 mt-4 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-bold rounded-xl shadow-lg shadow-cyan-500/25 transition-all transform hover:-translate-y-0.5 active:translate-y-0">
+                <button onclick="App.addMedia()" class="w-full py-4 mt-4 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-bold rounded-xl shadow-lg transition-transform transform hover:-translate-y-0.5">
                     <span id="submitBtnText">Suntikkan ke Database</span>
                 </button>
             </div>
@@ -138,9 +123,8 @@
     </main>
 
     <!-- View: Slideshow Fullscreen (Kiosk Mode) -->
-    <div id="viewSlideshow" class="fixed inset-0 z-[100] bg-black hidden flex-col items-center justify-center opacity-0 transition-opacity duration-500 select-none">
-        
-        <!-- Shield Overlay (To catch mouse events over iframes) -->
+    <div id="viewSlideshow" class="fixed inset-0 z-[100] bg-black hidden flex-col items-center justify-center select-none">
+        <!-- Shield Overlay -->
         <div id="slideInteractionShield" class="absolute inset-0 z-[101] bg-transparent"></div>
 
         <!-- HUD Wrapper -->
@@ -159,18 +143,18 @@
                 </div>
             </div>
 
-            <!-- Bottom Bar: Title & Instructions -->
+            <!-- Bottom Bar -->
             <div class="p-6">
                 <div class="inline-block bg-black/70 backdrop-blur-md border border-white/10 px-6 py-3 rounded-xl shadow-xl max-w-full">
-                    <h2 id="slideTitle" class="text-white text-xl sm:text-2xl font-bold truncate">Title</h2>
-                    <p class="text-[10px] text-slate-400 mt-1">-------</p>
+                    <h2 id="slideTitle" class="text-white text-xl font-bold truncate">Title</h2>
+                    <p class="text-[10px] text-slate-400 mt-1">Tekan SPACEBAR 3x secara cepat atau ESC untuk keluar.</p>
                 </div>
             </div>
         </div>
 
         <!-- Render Layer -->
-        <div id="slideContent" class="w-full h-full flex items-center justify-center p-0 z-[100]">
-            <!-- Media Injected Here -->
+        <div id="slideContent" class="w-full h-full flex items-center justify-center p-0 z-[100] relative">
+            <!-- Media disuntikkan secara dinamis di sini -->
         </div>
     </div>
 
@@ -178,14 +162,17 @@
     <div id="toastContainer" class="fixed bottom-6 right-6 z-[200] flex flex-col gap-3 pointer-events-none"></div>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, writeBatch, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
-        // MUTLAK: Mode Produksi Cloud Aktif
+        // ==========================================
+        // SAKLAR ARSITEKTUR MUTLAK
+        // ==========================================
+        // UBAH INI JADI false SAAT SUDAH DI GITHUB AGAR TERHUBUNG KE FIREBASE
         const is_preview = false; 
 
-        // KREDENSIAL FIREBASE ANDA
+        // KREDENSIAL FIREBASE ASLI ANDA
         const firebaseConfig = {
             apiKey: "AIzaSyA8XREeEtq3K0c7melRj1Y2xgRvlhEMAjk",
             authDomain: "gen-lang-client-0756249566.firebaseapp.com",
@@ -196,93 +183,69 @@
             measurementId: "G-VT430BGSL8"
         };
 
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'omniscient_kiosk';
+        const omniAppId = 'omniscient_kiosk';
         let app, db, auth, mediaCol;
 
         if (!is_preview) {
             app = initializeApp(firebaseConfig);
             db = getFirestore(app);
             auth = getAuth(app);
-            // Mengikuti aturan keamanan mutlak platform: public/data/media
-            mediaCol = collection(db, 'artifacts', appId, 'public', 'data', 'media');
+            // Standar aturan sistem: menggunakan path artifacts/id/public/data
+            mediaCol = collection(db, 'artifacts', omniAppId, 'public', 'data', 'media');
         }
 
         window.App = {
             currentView: 'gallery',
             currentItems: [],
-            editingId: null,
-            spacebarCount: 0,
-            spacebarTimer: null,
+            draggedItemIndex: null,
+            
+            // Variabel Kiosk
+            currentSlideIndex: 0,
+            currentPlayingId: null, // JANGKAR MEMORI: Mencegah Iframe dimuat ulang jika medianya sama
             slideshowInterval: null,
             slideshowTimeout: null,
             hudTimer: null,
-            currentSlideIndex: 0,
-            draggedItemIndex: null,
+            
+            // Variabel Waktu Sholat
             prayerJadwal: null,
             isPrayerModeActive: false,
-            initialLoadComplete: false,
 
             init: async function() {
-                // MUAT YOUTUBE IFRAME API UNTUK LOOPING SEMPURNA TANPA KEDIP
-                if (!document.getElementById('yt-api-script')) {
-                    const tag = document.createElement('script');
-                    tag.id = 'yt-api-script';
-                    tag.src = "https://www.youtube.com/iframe_api";
-                    document.head.appendChild(tag);
-                }
-
-                const savedView = localStorage.getItem('omni_last_view') || 'gallery';
-                this.toggleView(savedView);
-                this.setupSlideshowEvents();
+                this.setupEvents();
                 this.fetchPrayerTimes();
 
                 if (is_preview) {
-                    this.showToast("System berjalan di Mode Offline.", "info");
+                    this.showToast("Berjalan di Mode Offline (Preview).", "info");
+                    // Mock Data untuk tes
+                    this.currentItems = [
+                        { id: 'm1', title: "Jadwal Sholat Live", type: "iframe", url: "https://officialsaprudin.github.io/JADWAL-SHOLAT/", duration: 30, isPrayer: true, isMuted: false, sortOrder: 0 },
+                        { id: 'm2', title: "Profile Video (Loop)", type: "video", url: "https://www.w3schools.com/html/mov_bbb.mp4", duration: 25, isPrayer: false, isMuted: true, sortOrder: 1 },
+                        { id: 'm3', title: "YouTube Cinematic", type: "youtube", url: "dQw4w9WgXcQ", duration: 15, isPrayer: false, isMuted: true, sortOrder: 2 }
+                    ];
                     this.renderGallery();
                 } else {
                     try {
                         this.showToast("Menghubungkan ke Cloud Singularity...", "info");
-                        // Wajib Auth Anonim sebelum bisa menulis database (Rule Firestore)
                         await signInAnonymously(auth);
                         
                         onSnapshot(mediaCol, (snapshot) => {
                             const items = [];
                             snapshot.forEach((doc) => { items.push({ id: doc.id, ...doc.data() }); });
-                            
-                            // Urutkan berdasarkan sortOrder, lalu createdAt
-                            items.sort((a, b) => {
-                                if (a.sortOrder !== undefined && b.sortOrder !== undefined) return a.sortOrder - b.sortOrder;
-                                return (a.createdAt || 0) - (b.createdAt || 0);
-                            });
-                            
+                            items.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
                             this.currentItems = items;
                             this.renderGallery();
-
-                            // Auto-Play Kiosk pada muatan pertama kali
-                            if (!this.initialLoadComplete && items.length > 0) {
-                                this.initialLoadComplete = true;
-                                this.startSlideshow(0);
-                            }
                         }, (error) => {
-                            console.error("Sync Error:", error);
-                            if (error.code === 'permission-denied') {
-                                this.showToast("GERBANG TERKUNCI: Buka Firebase -> Firestore Rules -> Allow Read/Write.", "error");
-                            } else {
-                                this.showToast("Gagal membaca data cloud.", "error");
-                            }
+                            console.error("Gagal membaca Cloud:", error);
+                            this.showToast("Akses Ditolak. Pastikan Rules Firestore sudah dibuka.", "error");
                         });
-
                     } catch (error) {
-                        console.error("Auth Error:", error);
-                        this.showToast("Pastikan Anda telah mengaktifkan Anonymous Auth di Firebase.", "error");
+                        this.showToast("Gagal Otorisasi Anonim.", "error");
                     }
                 }
             },
 
             toggleView: function(viewName) {
                 this.currentView = viewName;
-                localStorage.setItem('omni_last_view', viewName);
-                
                 document.getElementById('btnGallery').className = "px-4 py-2 rounded-lg text-sm font-medium transition-all bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center gap-2";
                 document.getElementById('btnAdd').className = "px-4 py-2 rounded-lg text-sm font-medium transition-all bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center gap-2";
                 
@@ -300,76 +263,66 @@
             },
 
             resetForm: function() {
+                document.getElementById('editId').value = '';
                 document.getElementById('inputTitle').value = '';
                 document.getElementById('inputType').value = 'image';
                 document.getElementById('inputUrl').value = '';
-                document.getElementById('inputDuration').value = '15';
-                document.getElementById('inputTransition').value = 'fade';
+                document.getElementById('inputDuration').value = '30';
                 document.getElementById('inputIsPrayer').checked = false;
                 document.getElementById('inputIsMuted').checked = false;
                 
                 document.getElementById('formTitle').innerText = "Injeksi Media Baru";
                 document.getElementById('submitBtnText').innerText = "Suntikkan ke Database";
-                this.editingId = null;
-                this.handleTypeChange();
             },
 
-            handleTypeChange: function() {
-                const type = document.getElementById('inputType').value;
-                const urlInput = document.getElementById('inputUrl');
-                if (type === 'youtube') urlInput.placeholder = "URL YouTube atau ID (ex: dQw4w9WgXcQ)";
-                else if (type === 'video') urlInput.placeholder = "URL Video MP4 / Direktori File (ex: https://.../video.mp4)";
-                else urlInput.placeholder = "URL Gambar atau Tautan Share Google Drive";
-            },
-
-            addMedia: function() {
-                const title = document.getElementById('inputTitle').value.trim();
+            addMedia: async function() {
+                const editId = document.getElementById('editId').value;
+                const title = document.getElementById('inputTitle').value.trim() || 'Tanpa Judul';
                 let type = document.getElementById('inputType').value;
                 let url = document.getElementById('inputUrl').value.trim();
                 const duration = parseInt(document.getElementById('inputDuration').value) || 15;
-                const transition = document.getElementById('inputTransition').value;
                 const isPrayer = document.getElementById('inputIsPrayer').checked;
                 const isMuted = document.getElementById('inputIsMuted').checked;
 
-                if (!title || !url) return this.showToast("Judul dan URL tidak boleh kosong.", "error");
+                if (!url) return this.showToast("URL tidak boleh kosong.", "error");
 
-                // PARSER GOOGLE DRIVE CERDAS (Memaksa Iframe Preview)
+                // PARSER GOOGLE DRIVE CERDAS: Otomatis memutus akses download dan mengubah jadi Iframe Preview
                 if (url.includes('drive.google.com/file/d/')) {
                     type = 'iframe';
                     url = url.replace(/\/view.*$/, '') + '/preview';
-                    this.showToast("Link Google Drive ditangkap dan diubah menjadi Iframe.", "info");
+                    this.showToast("Link Google Drive dienkapsulasi menjadi Iframe.", "info");
                 }
+
+                document.getElementById('submitBtnText').innerText = "Mentransmisi...";
+
+                const payload = { title, type, url, duration, isPrayer, isMuted };
 
                 if (is_preview) {
-                    this.showToast("Sistem berada dalam mode Offline.", "info");
-                } else {
-                    const sortOrder = this.currentItems.length > 0 ? Math.max(...this.currentItems.map(i => i.sortOrder || 0)) + 1 : 0;
-                    this.transmitDataToCloud(title, type, url, duration, transition, isPrayer, isMuted, sortOrder);
-                }
-            },
-
-            transmitDataToCloud: async function(title, type, url, duration, transition, isPrayer, isMuted, sortOrder) {
-                try {
-                    document.getElementById('submitBtnText').innerText = "Mentransmisi...";
-                    const payload = { title, type, url, duration, transition, isPrayer, isMuted };
-                    
-                    // Authentication Safeguard
-                    if (!auth.currentUser) await signInAnonymously(auth);
-
-                    if (this.editingId) {
-                        await updateDoc(doc(mediaCol, this.editingId), payload);
-                        this.showToast("Modifikasi tersimpan ke Cloud.", "success");
+                    if (editId) {
+                        const idx = this.currentItems.findIndex(m => m.id === editId);
+                        this.currentItems[idx] = { ...this.currentItems[idx], ...payload };
                     } else {
-                        payload.createdAt = Date.now();
-                        payload.sortOrder = sortOrder;
-                        await addDoc(mediaCol, payload);
-                        this.showToast("Entitas diinjeksi ke Cloud.", "success");
+                        payload.id = Date.now().toString();
+                        payload.sortOrder = this.currentItems.length;
+                        this.currentItems.push(payload);
                     }
+                    this.renderGallery();
                     this.toggleView('gallery');
-                } catch (error) {
-                    console.error("Transmisi Gagal:", error);
-                    this.showToast("Gagal menyimpan. Periksa koneksi atau Rules Firestore.", "error");
-                    document.getElementById('submitBtnText').innerText = "Suntikkan ke Database";
+                    this.showToast("Entitas disimpan (Mode Offline).", "success");
+                } else {
+                    try {
+                        if (editId) {
+                            await updateDoc(doc(mediaCol, editId), payload);
+                        } else {
+                            payload.sortOrder = this.currentItems.length;
+                            await addDoc(mediaCol, payload);
+                        }
+                        this.toggleView('gallery');
+                        this.showToast("Transmisi ke Cloud berhasil.", "success");
+                    } catch (error) {
+                        this.showToast("Gagal menyimpan. Pastikan Rule Database terbuka.", "error");
+                        document.getElementById('submitBtnText').innerText = "Coba Lagi";
+                    }
                 }
             },
 
@@ -377,30 +330,28 @@
                 const item = this.currentItems.find(i => i.id === id);
                 if(!item) return;
 
-                this.editingId = id;
+                document.getElementById('editId').value = id;
                 document.getElementById('inputTitle').value = item.title;
                 document.getElementById('inputType').value = item.type;
                 document.getElementById('inputUrl').value = item.url;
                 document.getElementById('inputDuration').value = item.duration;
-                document.getElementById('inputTransition').value = item.transition || 'fade';
                 document.getElementById('inputIsPrayer').checked = item.isPrayer || false;
                 document.getElementById('inputIsMuted').checked = item.isMuted || false;
 
-                document.getElementById('formTitle').innerText = "Modifikasi Entitas Media";
+                document.getElementById('formTitle').innerText = "Modifikasi Entitas";
                 document.getElementById('submitBtnText').innerText = "Perbarui Database";
-
-                this.handleTypeChange();
                 this.toggleView('add');
             },
 
             deleteItem: async function(id) {
-                if(!confirm("Hapus entitas ini dari basis data?")) return;
-                try { 
-                    if (!auth.currentUser) await signInAnonymously(auth);
-                    await deleteDoc(doc(mediaCol, id)); 
-                    this.showToast("Entitas dihancurkan.", "success"); 
-                } 
-                catch (error) { this.showToast("Gagal menghapus entitas.", "error"); }
+                if(!confirm("Hapus entitas ini selamanya?")) return;
+                if (is_preview) {
+                    this.currentItems = this.currentItems.filter(i => i.id !== id);
+                    this.renderGallery();
+                } else {
+                    await deleteDoc(doc(mediaCol, id));
+                }
+                this.showToast("Entitas dihancurkan.", "success");
             },
 
             renderGallery: function() {
@@ -411,70 +362,42 @@
                 if (this.currentItems.length === 0) {
                     empty.classList.remove('hidden'); empty.classList.add('flex'); return;
                 }
-                
                 empty.classList.add('hidden'); empty.classList.remove('flex');
 
                 this.currentItems.forEach((item, index) => {
-                    let thumbHtml = '';
-                    if (item.type === 'youtube') {
-                        let yId = item.url.includes('v=') ? item.url.split('v=')[1].split('&')[0] : (item.url.includes('youtu.be/') ? item.url.split('youtu.be/')[1].split('?')[0] : item.url);
-                        thumbHtml = `<img src="https://img.youtube.com/vi/${yId}/hqdefault.jpg" class="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-500">
-                                     <div class="absolute inset-0 flex items-center justify-center bg-black/30"><i class="ph-fill ph-youtube-logo text-5xl text-red-500 drop-shadow-md"></i></div>`;
-                    } else if (item.type === 'video') {
-                        thumbHtml = `<div class="absolute inset-0 flex items-center justify-center bg-slate-800"><i class="ph-fill ph-video-camera text-4xl text-white drop-shadow-md"></i></div>`;
-                    } else if (item.type === 'iframe') {
-                        thumbHtml = `<div class="w-full h-48 bg-slate-800 flex items-center justify-center group-hover:scale-105 transition-transform duration-500">
-                                        <i class="ph-duotone ph-globe text-6xl text-cyan-400"></i>
-                                     </div>`;
-                    } else {
-                        thumbHtml = `<img src="${item.url}" class="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-500" onerror="this.src='https://placehold.co/600x400/1e293b/06b6d4?text=Drive+Image'">`;
-                    }
+                    let thumb = '';
+                    if (item.type === 'youtube') thumb = `<div class="bg-red-900/50 w-full h-full flex items-center justify-center"><i class="ph-fill ph-youtube-logo text-5xl text-red-500"></i></div>`;
+                    else if (item.type === 'video') thumb = `<div class="bg-blue-900/50 w-full h-full flex items-center justify-center"><i class="ph-fill ph-video-camera text-5xl text-blue-400"></i></div>`;
+                    else if (item.type === 'iframe') thumb = `<div class="bg-cyan-900/50 w-full h-full flex items-center justify-center"><i class="ph-duotone ph-globe text-5xl text-cyan-400"></i></div>`;
+                    else thumb = `<img src="${item.url}" class="w-full h-full object-cover">`;
 
                     const card = document.createElement('div');
-                    card.className = "glass-panel rounded-xl overflow-hidden group cursor-pointer hover:border-cyan-500/50 transition-all duration-300 shadow-lg flex flex-col";
+                    card.className = "glass-panel rounded-xl overflow-hidden group shadow-lg flex flex-col cursor-grab active:cursor-grabbing border-2 border-transparent hover:border-cyan-500/50 transition-all duration-300";
                     card.draggable = true;
 
-                    // Implementasi Drag & Drop
-                    card.ondragstart = (e) => {
-                        this.draggedItemIndex = index;
-                        e.dataTransfer.effectAllowed = 'move';
-                        e.dataTransfer.setData('text/plain', index);
-                        setTimeout(() => card.classList.add('opacity-40', 'border-cyan-500', 'scale-95'), 0);
-                    };
-                    card.ondragend = () => card.classList.remove('opacity-40', 'border-cyan-500', 'scale-95');
-                    card.ondragover = (e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; card.classList.add('border-2', 'border-dashed', 'border-cyan-400'); };
-                    card.ondragleave = () => card.classList.remove('border-2', 'border-dashed', 'border-cyan-400');
-                    card.ondrop = (e) => { e.preventDefault(); card.classList.remove('border-2', 'border-dashed', 'border-cyan-400'); this.handleDrop(index); };
-
-                    card.onclick = () => this.startSlideshow(index);
-
-                    const muteBadge = item.isMuted 
-                        ? `<div class="absolute top-10 right-2 bg-orange-600/90 backdrop-blur text-xs font-bold px-2 py-1 rounded text-white shadow-lg flex items-center gap-1"><i class="ph-bold ph-speaker-slash"></i> Muted</div>`
-                        : (item.type === 'video' || item.type === 'youtube' ? `<div class="absolute top-10 right-2 bg-blue-600/90 backdrop-blur text-xs font-bold px-2 py-1 rounded text-white shadow-lg flex items-center gap-1"><i class="ph-bold ph-speaker-high"></i> Suara</div>` : '');
+                    // DRAG AND DROP LOGIC
+                    card.ondragstart = (e) => { this.draggedItemIndex = index; setTimeout(() => card.classList.add('opacity-50'), 0); };
+                    card.ondragend = () => card.classList.remove('opacity-50');
+                    card.ondragover = (e) => { e.preventDefault(); card.classList.add('border-cyan-400', 'border-dashed'); };
+                    card.ondragleave = () => card.classList.remove('border-cyan-400', 'border-dashed');
+                    card.ondrop = (e) => { e.preventDefault(); card.classList.remove('border-cyan-400', 'border-dashed'); this.handleDrop(index); };
 
                     card.innerHTML = `
-                        <div class="relative overflow-hidden bg-black h-48 cursor-grab active:cursor-grabbing">
-                            ${thumbHtml}
-                            <div class="absolute top-2 right-2 bg-black/70 backdrop-blur text-xs font-mono px-2 py-1 rounded text-cyan-300 border border-white/10 flex items-center gap-1">
+                        <div class="relative h-40 bg-black overflow-hidden" onclick="App.startSlideshow(${index})">
+                            ${thumb}
+                            <div class="absolute top-2 right-2 bg-black/70 backdrop-blur text-xs font-mono px-2 py-1 rounded text-cyan-300 flex items-center gap-1">
                                 <i class="ph-bold ph-timer"></i> ${item.duration}s
                             </div>
-                            ${muteBadge}
-                            ${item.isPrayer ? `<div class="absolute top-2 left-2 bg-emerald-600/90 backdrop-blur text-xs font-bold px-2 py-1 rounded text-white shadow-lg flex items-center gap-1"><i class="ph-fill ph-mosque"></i> SHOLAT</div>` : ''}
+                            ${item.isMuted ? `<div class="absolute top-10 right-2 bg-orange-600/90 text-xs px-2 py-1 rounded text-white shadow-lg"><i class="ph-bold ph-speaker-slash"></i> Muted</div>` : ''}
+                            ${item.isPrayer ? `<div class="absolute top-2 left-2 bg-emerald-600 text-xs font-bold px-2 py-1 rounded text-white shadow-lg"><i class="ph-fill ph-mosque"></i> SHOLAT</div>` : ''}
                         </div>
                         <div class="p-4 flex-1 flex flex-col justify-between">
                             <h3 class="font-bold text-white truncate text-lg">${item.title}</h3>
-                            <div class="flex items-center justify-between mt-3 text-xs text-slate-400 uppercase tracking-wider font-semibold">
-                                <div class="flex items-center gap-3">
-                                    <span>${item.type}</span>
-                                    <span class="text-cyan-400 border-l border-slate-700 pl-3"><i class="ph-bold ph-magic-wand"></i> ${item.transition || 'fade'}</span>
-                                </div>
-                                <div class="flex items-center gap-2">
-                                    <button onclick="event.stopPropagation(); App.editItem('${item.id}')" class="text-blue-400 hover:text-blue-300 bg-blue-400/10 hover:bg-blue-400/20 px-2 py-1 rounded transition-colors" title="Edit Media">
-                                        <i class="ph-bold ph-pencil-simple"></i>
-                                    </button>
-                                    <button onclick="event.stopPropagation(); App.deleteItem('${item.id}')" class="text-red-400 hover:text-red-300 bg-red-400/10 hover:bg-red-400/20 px-2 py-1 rounded transition-colors" title="Hapus Media">
-                                        <i class="ph-bold ph-trash"></i>
-                                    </button>
+                            <div class="flex justify-between items-center mt-4">
+                                <span class="text-xs text-slate-400 uppercase font-semibold">${item.type}</span>
+                                <div class="flex gap-2">
+                                    <button onclick="App.editItem('${item.id}')" class="text-blue-400 hover:bg-blue-400/20 px-2 py-1 rounded transition"><i class="ph-bold ph-pencil-simple"></i></button>
+                                    <button onclick="App.deleteItem('${item.id}')" class="text-red-400 hover:bg-red-400/20 px-2 py-1 rounded transition"><i class="ph-bold ph-trash"></i></button>
                                 </div>
                             </div>
                         </div>
@@ -485,34 +408,27 @@
 
             handleDrop: async function(targetIndex) {
                 if (this.draggedItemIndex === null || this.draggedItemIndex === targetIndex) return;
-
-                const draggedItem = this.currentItems[this.draggedItemIndex];
-                this.currentItems.splice(this.draggedItemIndex, 1);
+                const draggedItem = this.currentItems.splice(this.draggedItemIndex, 1)[0];
                 this.currentItems.splice(targetIndex, 0, draggedItem);
                 this.currentItems.forEach((item, idx) => { item.sortOrder = idx; });
                 this.renderGallery();
 
                 if (!is_preview) {
-                    try {
-                        if (!auth.currentUser) await signInAnonymously(auth);
-                        const batch = writeBatch(db);
-                        this.currentItems.forEach((item) => {
-                            batch.update(doc(mediaCol, item.id), { sortOrder: item.sortOrder });
-                        });
-                        await batch.commit();
-                    } catch (error) { this.showToast("Gagal menyinkronkan urutan.", "error"); }
+                    const batch = writeBatch(db);
+                    this.currentItems.forEach(item => { batch.update(doc(mediaCol, item.id), { sortOrder: item.sortOrder }); });
+                    await batch.commit();
                 }
             },
 
             fetchPrayerTimes: async function() {
                 try {
-                    const today = new Date();
-                    const year = today.getFullYear(), month = String(today.getMonth() + 1).padStart(2, '0'), day = String(today.getDate()).padStart(2, '0');
-                    const res = await fetch(`https://api.myquran.com/v2/sholat/jadwal/2113/${year}/${month}/${day}`);
+                    const d = new Date();
+                    const y = d.getFullYear(), m = String(d.getMonth() + 1).padStart(2, '0'), day = String(d.getDate()).padStart(2, '0');
+                    const res = await fetch(`https://api.myquran.com/v2/sholat/jadwal/2113/${y}/${m}/${day}`);
                     const data = await res.json();
                     if(data.status) {
                         this.prayerJadwal = data.data.jadwal;
-                        document.getElementById('astralSyncStatus').innerText = "Astral (BANJARMASIN 2113) Tersinkronisasi.";
+                        document.getElementById('astralSyncStatus').innerText = "Astral (BANJARMASIN 2113) Sinkron.";
                         this.startPrayerMonitor();
                     }
                 } catch(e) { console.error(e); }
@@ -523,14 +439,14 @@
                     if(!this.prayerJadwal) return;
                     const now = new Date();
                     const currentMins = (now.getHours() * 60) + now.getMinutes();
-                    const prayerTimes = [this.prayerJadwal.subuh, this.prayerJadwal.dzuhur, this.prayerJadwal.ashar, this.prayerJadwal.maghrib, this.prayerJadwal.isya];
-
+                    const times = [this.prayerJadwal.subuh, this.prayerJadwal.dzuhur, this.prayerJadwal.ashar, this.prayerJadwal.maghrib, this.prayerJadwal.isya];
+                    
                     let isTimeNow = false;
-                    for(let timeStr of prayerTimes) {
-                        if(!timeStr || timeStr === "-") continue;
-                        const [h, m] = timeStr.split(':').map(Number);
-                        const targetMins = (h * 60) + m;
-                        // Range: H-15 hingga H+30 (45 menit total)
+                    for(let t of times) {
+                        if(!t || t === "-") continue;
+                        const [h, min] = t.split(':').map(Number);
+                        const targetMins = (h * 60) + min;
+                        // Jendela waktu: H-15 hingga H+30 (Total 45 Menit)
                         if(currentMins >= (targetMins - 15) && currentMins < (targetMins + 30)) { isTimeNow = true; break; }
                     }
 
@@ -542,207 +458,179 @@
                         this.isPrayerModeActive = false;
                         if(!document.getElementById('viewSlideshow').classList.contains('hidden')) this.startSlideshow(0); 
                     }
-                }, 10000); 
+                }, 10000); // Cek setiap 10 detik
             },
 
-            setupSlideshowEvents: function() {
+            setupEvents: function() {
+                // HUD Interaksi Mouse
                 const shield = document.getElementById('slideInteractionShield');
-                const triggerHUD = () => this.showHUD();
+                const triggerHUD = () => {
+                    const hud = document.getElementById('slideshowHUD');
+                    hud.classList.remove('opacity-0');
+                    document.getElementById('viewSlideshow').classList.remove('no-cursor');
+                    clearTimeout(this.hudTimer);
+                    this.hudTimer = setTimeout(() => {
+                        hud.classList.add('opacity-0');
+                        document.getElementById('viewSlideshow').classList.add('no-cursor');
+                    }, 2500); 
+                };
                 shield.addEventListener('mousemove', triggerHUD);
-                shield.addEventListener('mousedown', triggerHUD);
-                shield.addEventListener('touchstart', triggerHUD);
+                shield.addEventListener('click', triggerHUD);
                 
-                // BACKDOOR ESCAPE: 3x Spacebar
+                // Escape Hatch (Spasi 3x atau ESC)
+                let spaceCount = 0, spaceTimer = null;
                 document.addEventListener('keydown', (e) => {
-                    const isSlideshowActive = !document.getElementById('viewSlideshow').classList.contains('hidden');
-                    if (isSlideshowActive && e.code === 'Space') {
-                        e.preventDefault(); 
-                        this.spacebarCount++;
-                        clearTimeout(this.spacebarTimer);
-                        this.spacebarTimer = setTimeout(() => { this.spacebarCount = 0; }, 1000); 
-                        if (this.spacebarCount >= 3) {
-                            this.spacebarCount = 0;
-                            this.closeSlideshow();
-                        }
+                    const view = document.getElementById('viewSlideshow');
+                    if (view.classList.contains('hidden')) return;
+                    
+                    if (e.code === 'Escape') this.closeSlideshow();
+                    if (e.code === 'Space') {
+                        spaceCount++;
+                        clearTimeout(spaceTimer);
+                        spaceTimer = setTimeout(() => spaceCount = 0, 1000); 
+                        if (spaceCount >= 3) { spaceCount = 0; this.closeSlideshow(); }
                     }
                 });
             },
 
-            showHUD: function() {
-                const hud = document.getElementById('slideshowHUD');
-                const view = document.getElementById('viewSlideshow');
-                hud.classList.remove('opacity-0');
-                view.classList.remove('no-cursor');
-                clearTimeout(this.hudTimer);
-                this.hudTimer = setTimeout(() => {
-                    hud.classList.add('opacity-0');
-                    view.classList.add('no-cursor');
-                }, 2500); 
-            },
-
             startSlideshow: function(startIndex = 0) {
-                if (!this.currentItems || this.currentItems.length === 0) return this.showToast("Tidak ada entitas untuk diputar.", "error");
-                this.currentSlideIndex = startIndex;
+                if (this.currentItems.length === 0) return this.showToast("Galeri kosong.", "error");
                 const view = document.getElementById('viewSlideshow');
                 view.classList.remove('hidden');
-                void view.offsetWidth;
-                view.classList.remove('opacity-0');
-                this.showHUD();
-                this.playSlide(this.currentSlideIndex);
+                
+                // Reset Jangkar Memori agar rendering pertama selalu dieksekusi
+                this.currentPlayingId = null;
+                document.getElementById('slideContent').innerHTML = '';
+
+                this.playSlide(startIndex);
             },
 
             playSlide: function(index) {
                 let activeItems = this.currentItems;
+                // Filter Waktu Sholat
                 if(this.isPrayerModeActive) {
                     const prayerMedia = this.currentItems.filter(i => i.isPrayer);
                     if(prayerMedia.length > 0) activeItems = prayerMedia;
                 }
 
-                if (!activeItems || activeItems.length === 0) return this.closeSlideshow();
-                if (index >= activeItems.length) { index = 0; }
+                if (activeItems.length === 0) return this.closeSlideshow();
+                if (index >= activeItems.length) index = 0;
                 
                 this.currentSlideIndex = index;
                 const item = activeItems[index];
-                const durationSeconds = parseInt(item.duration) > 0 ? parseInt(item.duration) : 15;
-                let timeLeft = durationSeconds;
+                const durationSeconds = parseInt(item.duration) || 15;
                 
-                const contentContainer = document.getElementById('slideContent');
                 document.getElementById('slideTitle').textContent = item.title;
-                document.getElementById('slideTimer').textContent = timeLeft + 's';
 
-                let activeTransition = item.transition || 'fade';
-                if (activeTransition === 'random') {
-                    const fx = ['fade', 'slide', 'zoom', 'blur'];
-                    activeTransition = fx[Math.floor(Math.random() * fx.length)];
-                }
-
-                let mediaHtml = '';
-                const muteParam = item.isMuted ? '&mute=1' : '';
-                const mutedAttr = item.isMuted ? 'muted' : '';
-                const ytPlayerId = 'yt-' + Date.now(); // ID Unik untuk API YouTube
-
-                if (item.type === 'youtube') {
-                    let yId = item.url.includes('v=') ? item.url.split('v=')[1].split('&')[0] : (item.url.includes('youtu.be/') ? item.url.split('youtu.be/')[1].split('?')[0] : item.url);
-                    mediaHtml = `<div id="${ytPlayerId}" class="w-full h-full pointer-events-none scale-105"></div>`;
-                } else if (item.type === 'video') {
-                    mediaHtml = `<video class="w-full h-full object-contain bg-black" autoplay loop playsinline ${mutedAttr} ontimeupdate="if(this.duration && this.duration - this.currentTime < 0.15) { this.currentTime = 0.05; this.play(); }"><source src="${item.url}"></video>`;
-                } else if (item.type === 'iframe') {
-                    mediaHtml = `<iframe class="w-full h-full border-none bg-white pointer-events-auto" src="${item.url}" sandbox="allow-same-origin allow-scripts allow-popups allow-forms" title="${item.title}"></iframe>`;
-                } else {
-                    mediaHtml = `<img class="w-full h-full object-contain bg-black" src="${item.url}" alt="${item.title}">`;
+                // =========================================================
+                // JANGKAR MEMORI (ANTI-RELOAD):
+                // Jika media yang mau diputar ID-nya sama dengan yang sedang tayang
+                // (misal karena cuma 1 video, atau cuma 1 jadwal sholat yang di-loop),
+                // maka JANGAN buat elemen HTML baru. Cukup ulang timer & progress bar-nya saja.
+                // =========================================================
+                if (this.currentPlayingId === item.id) {
+                    this.resetProgressBar(durationSeconds);
+                    this.startSlideTimers(durationSeconds, index);
+                    return; // BYPASS RENDERING HTML
                 }
                 
-                // --- ARSITEKTUR DOUBLE-BUFFERING (ANTI BLACK-SCREEN) ---
-                const newSlideLayer = document.createElement('div');
-                newSlideLayer.className = `slide-layer absolute inset-0 w-full h-full z-10 bg-black`;
-                newSlideLayer.innerHTML = mediaHtml;
+                // Set Jangkar Memori Baru
+                this.currentPlayingId = item.id;
+
+                // =========================================================
+                // ARSITEKTUR DOUBLE-BUFFERING (CROSSFADE):
+                // Mencegah layar hitam antar transisi slide yang berbeda
+                // =========================================================
+                const contentContainer = document.getElementById('slideContent');
                 
-                // Turunkan prioritas Z-Index layer lama agar tertimpa transisi secara halus
+                // 1. Turunkan prioritas layer lama ke belakang
                 const oldLayers = contentContainer.querySelectorAll('.slide-layer');
                 oldLayers.forEach(layer => { layer.style.zIndex = '1'; });
-                
-                contentContainer.appendChild(newSlideLayer);
 
-                // Fungsi Pemicu Transisi (Hanya dieksekusi saat media baru sudah siap)
-                let transitionStarted = false;
-                const executeTransition = () => {
-                    if (transitionStarted) return;
-                    transitionStarted = true;
-                    newSlideLayer.style.opacity = ''; // Hapus kunci transparan
-                    newSlideLayer.classList.add(`trans-${activeTransition}`); // Mulai animasi
-                    
-                    // Bersihkan memori dari layer lama setelah animasi transisi selesai (1.5 detik)
-                    setTimeout(() => {
-                        oldLayers.forEach(layer => layer.remove());
-                    }, 1500);
-                };
+                // 2. Siapkan HTML Layer Baru
+                let mediaHtml = '';
+                const mutedAttr = item.isMuted ? 'muted' : '';
+                const ytMuteParam = item.isMuted ? '&mute=1' : '';
 
-                // EKSEKUSI KHUSUS YOUTUBE (MENUNGGU RENDER FRAME PERTAMA)
                 if (item.type === 'youtube') {
-                    newSlideLayer.style.opacity = '0'; // Sembunyikan iframe yang masih hitam (loading)
                     let yId = item.url.includes('v=') ? item.url.split('v=')[1].split('&')[0] : (item.url.includes('youtu.be/') ? item.url.split('youtu.be/')[1].split('?')[0] : item.url);
-                    setTimeout(() => {
-                        if (window.YT && window.YT.Player) {
-                            new YT.Player(ytPlayerId, {
-                                videoId: yId,
-                                playerVars: { 'autoplay': 1, 'controls': 0, 'modestbranding': 1, 'rel': 0, 'showinfo': 0, 'mute': item.isMuted ? 1 : 0, 'disablekb': 1, 'playsinline': 1, 'loop': 1, 'playlist': yId },
-                                events: {
-                                    'onReady': (e) => { 
-                                        e.target.playVideo(); 
-                                        const loopInterval = setInterval(() => {
-                                            if (!document.getElementById(ytPlayerId)) return clearInterval(loopInterval);
-                                            if (e.target.getCurrentTime && e.target.getDuration) {
-                                                const time = e.target.getCurrentTime();
-                                                const duration = e.target.getDuration();
-                                                if (duration > 1 && (duration - time) < 0.2) {
-                                                    e.target.seekTo(0.1, true);
-                                                }
-                                            }
-                                        }, 100);
-                                    },
-                                    'onStateChange': (e) => {
-                                        // PEMICU TRANSISI HANYA KETIKA VIDEO BENAR-BENAR BERJALAN (PLAYING)
-                                        if (e.data === YT.PlayerState.PLAYING) {
-                                            executeTransition();
-                                        }
-                                        if (e.data === YT.PlayerState.ENDED) { e.target.seekTo(0.1); e.target.playVideo(); }
-                                    }
-                                }
-                            });
-                            // Failsafe darurat jika internet putus
-                            setTimeout(executeTransition, 4000);
-                        }
-                    }, 50);
+                    // Parameter loop=1 dan playlist memastikan YouTube mengulang otomatis tanpa black screen internal
+                    mediaHtml = `<iframe class="w-full h-full pointer-events-none scale-105" src="https://www.youtube.com/embed/${yId}?autoplay=1&controls=0&loop=1&playlist=${yId}${ytMuteParam}&modestbranding=1" allow="autoplay" frameborder="0"></iframe>`;
+                } else if (item.type === 'video') {
+                    // Atribut loop memastikan video lokal mengulang otomatis tanpa putus
+                    mediaHtml = `<video class="w-full h-full object-contain bg-black" src="${item.url}" autoplay loop ${mutedAttr}></video>`;
+                } else if (item.type === 'iframe') {
+                    mediaHtml = `<iframe class="w-full h-full border-none bg-white" src="${item.url}" sandbox="allow-same-origin allow-scripts allow-popups"></iframe>`;
                 } else {
-                    executeTransition(); // Eksekusi transisi instan untuk Gambar & Video Lokal
+                    mediaHtml = `<img class="w-full h-full object-contain bg-black" src="${item.url}">`;
                 }
 
-                const progressBar = document.getElementById('slideProgress');
-                progressBar.style.transition = 'none'; 
-                progressBar.style.width = '0%';
-                
-                setTimeout(() => {
-                    progressBar.style.transition = `width ${durationSeconds}s linear`;
-                    progressBar.style.width = '100%';
-                }, 50);
+                // 3. Suntikkan Layer Baru (Di Atas, tapi transparan/opacity-0)
+                const newLayer = document.createElement('div');
+                newLayer.className = `slide-layer absolute inset-0 w-full h-full z-10 bg-black opacity-0 trans-fade`;
+                newLayer.innerHTML = mediaHtml;
+                contentContainer.appendChild(newLayer);
 
+                // 4. Hapus layer lama setelah transisi fade selesai (1.5 detik)
+                setTimeout(() => {
+                    oldLayers.forEach(layer => layer.remove());
+                }, 1500);
+
+                // Eksekusi Timer dan UI HUD
+                this.resetProgressBar(durationSeconds);
+                this.startSlideTimers(durationSeconds, index);
+            },
+
+            resetProgressBar: function(durationSeconds) {
+                const pBar = document.getElementById('slideProgress');
+                pBar.style.transition = 'none'; 
+                pBar.style.width = '0%';
+                
+                // Beri jeda 50ms agar DOM merender 0% dulu, baru kita jalankan animasinya
+                setTimeout(() => {
+                    pBar.style.transition = `width ${durationSeconds}s linear`;
+                    pBar.style.width = '100%';
+                }, 50);
+            },
+
+            startSlideTimers: function(durationSeconds, currentIndex) {
                 clearInterval(this.slideshowInterval);
                 clearTimeout(this.slideshowTimeout);
+
+                let timeLeft = durationSeconds;
+                document.getElementById('slideTimer').textContent = timeLeft + 's';
 
                 this.slideshowInterval = setInterval(() => {
                     timeLeft--;
                     if (timeLeft >= 0) document.getElementById('slideTimer').textContent = timeLeft + 's';
                 }, 1000);
 
+                // Pindah ke slide berikutnya saat timer habis
                 this.slideshowTimeout = setTimeout(() => {
-                    this.playSlide(this.currentSlideIndex + 1);
+                    this.playSlide(currentIndex + 1);
                 }, durationSeconds * 1000);
             },
 
             closeSlideshow: function() {
                 const view = document.getElementById('viewSlideshow');
-                view.classList.add('opacity-0');
+                view.classList.add('hidden');
+                
                 clearInterval(this.slideshowInterval);
                 clearTimeout(this.slideshowTimeout);
                 clearTimeout(this.hudTimer);
                 
-                setTimeout(() => {
-                    view.classList.add('hidden');
-                    document.getElementById('slideContent').innerHTML = ''; 
-                    view.classList.remove('no-cursor');
-                }, 500); 
+                this.currentPlayingId = null; // Reset jangkar
+                document.getElementById('slideContent').innerHTML = ''; // Hancurkan Iframe
             },
 
             showToast: function(msg, type = "info") {
                 const container = document.getElementById('toastContainer');
-                const toast = document.createElement('div');
-                let bgColor = type === "error" ? "bg-red-950 border-red-900 text-red-100" : (type === "success" ? "bg-emerald-950 border-emerald-900 text-emerald-100" : "bg-slate-800 border-slate-700 text-white");
-                
-                toast.className = `flex items-center gap-3 px-4 py-3 rounded-lg border shadow-2xl transform transition-all duration-300 translate-x-[120%] ${bgColor}`;
-                toast.innerHTML = `<span class="text-sm font-medium">${msg}</span>`;
-                container.appendChild(toast);
-                setTimeout(() => toast.classList.remove('translate-x-[120%]'), 10);
-                setTimeout(() => { toast.classList.add('translate-x-[120%]'); setTimeout(() => toast.remove(), 300); }, 3000);
+                const t = document.createElement('div');
+                t.className = `px-4 py-3 rounded-lg border shadow-xl text-sm font-medium transition-transform transform translate-x-full ${type === 'error' ? 'bg-red-900 text-white' : (type === 'success' ? 'bg-emerald-800 text-white' : 'bg-slate-800 text-white')}`;
+                t.textContent = msg;
+                container.appendChild(t);
+                setTimeout(() => t.classList.remove('translate-x-full'), 10);
+                setTimeout(() => { t.classList.add('translate-x-full'); setTimeout(() => t.remove(), 300); }, 3000);
             }
         };
 
