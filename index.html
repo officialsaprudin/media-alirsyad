@@ -1,191 +1,296 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Omniscient Media Kiosk</title>
     <link rel="icon" type="image/png" href="LOGO MI.png">
+    <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            dark: '#0a0f1d',
+                            card: '#111827',
+                            surface: '#1e293b',
+                            accent: '#06b6d4',
+                            glow: '#38bdf8'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Phosphor Icons CDN -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: #e2e8f0; overflow-x: hidden; }
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #1e293b; }
-        ::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 4px; }
-        
-        .glass-panel { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); }
-        .no-cursor { cursor: none !important; }
-        
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        .trans-fade { animation: fadeIn 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
-        
-        .slide-layer { transition: opacity 1s ease-in-out; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #0a0f1d; }
+        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #06b6d4; }
+        .glass-panel {
+            background: rgba(17, 24, 39, 0.75);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .media-crossfade {
+            transition: opacity 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+        }
     </style>
 </head>
-<body class="min-h-screen flex flex-col bg-[#0f172a]">
+<body class="bg-[#0a0f1d] text-slate-100 min-h-screen font-sans selection:bg-cyan-500 selection:text-black">
 
-    <!-- Navigation / Header (Persis Sesuai Tangkapan Layar) -->
-    <header class="glass-panel sticky top-0 z-40 px-6 py-4 shadow-lg flex flex-wrap items-center justify-between gap-4">
+    <script>
+        // SAKLAR MODE: true = Mode Preview (Mock Data lokal), false = Terhubung ke Firebase Cloud
+        const is_preview = false;
+    </script>
+
+    <header class="sticky top-0 z-40 glass-panel border-b border-slate-800/80 px-4 sm:px-8 py-3.5 flex flex-wrap justify-between items-center gap-4">
         <div class="flex items-center gap-3">
-            <i class="ph-duotone ph-infinity text-3xl text-cyan-400"></i>
+            <div class="w-10 h-10 rounded-xl bg-cyan-950/70 border border-cyan-500/40 flex items-center justify-center text-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.25)]">
+                <i class="ph-bold ph-infinity text-2xl"></i>
+            </div>
             <div>
-                <h1 class="text-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent tracking-wide">OMNISCIENT</h1>
-                <p id="astralSyncStatus" class="text-[10px] text-emerald-400 font-mono">Astral (BANJARMASIN 2113) Sinkron.</p>
+                <h1 class="text-lg font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-sky-200">
+                    OMNISCIENT
+                </h1>
+                <p id="astralStatus" class="text-xs text-emerald-400 font-medium flex items-center gap-1.5">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+                    Astral (BANJARMASIN 2113) Sinkron.
+                </p>
             </div>
         </div>
-        
-        <div class="flex gap-2 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
-            <button onclick="App.toggleView('gallery')" id="btnGallery" class="px-4 py-2 rounded-lg text-sm font-medium transition-all bg-blue-600 text-white shadow-lg shadow-blue-500/30 flex items-center gap-2">
-                <i class="ph-bold ph-squares-four"></i> Galeri
+
+        <div class="flex items-center gap-2 sm:gap-3">
+            <button id="btnNavGallery" onclick="KioskApp.toggleView('gallery')" class="px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-2 transition-all bg-blue-600 text-white shadow-lg shadow-blue-600/30">
+                <i class="ph-bold ph-squares-four text-base"></i>
+                <span>Galeri</span>
             </button>
-            <button onclick="App.toggleView('add')" id="btnAdd" class="px-4 py-2 rounded-lg text-sm font-medium transition-all bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center gap-2">
-                <i class="ph-bold ph-plus"></i> Injeksi Media
+            <button id="btnNavAdd" onclick="KioskApp.toggleView('add')" class="px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-2 transition-all bg-slate-800/90 text-slate-300 hover:text-white hover:bg-slate-700/80 border border-slate-700/60">
+                <i class="ph-bold ph-plus text-base"></i>
+                <span>Injeksi Media</span>
             </button>
-            <button onclick="App.startSlideshow(0)" class="px-4 py-2 rounded-lg text-sm font-medium transition-all bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-500/30 flex items-center gap-2 ml-auto sm:ml-4">
-                <i class="ph-fill ph-play-circle text-lg"></i> Play Preview
+            <button onclick="KioskApp.startSlideshow(0)" class="px-5 py-2 rounded-xl text-sm font-bold flex items-center gap-2 transition-all bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-[0_0_20px_rgba(16,185,129,0.35)] active:scale-95">
+                <i class="ph-fill ph-play text-base"></i>
+                <span>Play Preview</span>
             </button>
         </div>
     </header>
 
-    <main class="flex-1 p-6 relative">
-        <!-- View: Gallery (Kartu Sesuai Aslinya) -->
-        <div id="viewGallery" class="block">
-            <div id="mediaGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6 max-w-7xl mx-auto">
-                <!-- Media Items Disuntikkan secara dinamis di sini -->
+    <main class="max-w-7xl mx-auto p-4 sm:p-8">
+        <!-- VIEW: GALERI MEDIA -->
+        <section id="viewGallery" class="space-y-6">
+            <div id="galleryGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Media Cards will be injected here dynamically -->
             </div>
-            
-            <div id="emptyState" class="hidden flex-col items-center justify-center py-20 text-slate-500">
-                <i class="ph-duotone ph-ghost text-6xl mb-4"></i>
-                <p class="text-lg">Kekosongan. Tidak ada entitas media terpasang.</p>
+            <div id="galleryEmpty" class="hidden text-center py-20">
+                <i class="ph ph-film-strip text-6xl text-slate-600 mb-3"></i>
+                <p class="text-slate-400 font-medium">Belum ada media di database.</p>
+                <button onclick="KioskApp.toggleView('add')" class="mt-4 px-4 py-2 rounded-lg bg-cyan-600 text-sm font-semibold">Suntikkan Media Sekarang</button>
+            </div>
+        </section>
+
+        <!-- VIEW: FORM INJEKSI MEDIA -->
+        <section id="viewAdd" class="hidden max-w-2xl mx-auto">
+            <div class="glass-panel p-6 sm:p-8 rounded-2xl border border-slate-800 shadow-2xl space-y-6">
+                <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+                    <h2 id="formTitle" class="text-xl font-bold text-white flex items-center gap-2">
+                        <i class="ph-bold ph-plus-circle text-cyan-400"></i>
+                        Injeksi Media Baru
+                    </h2>
+                    <button onclick="KioskApp.toggleView('gallery')" class="text-slate-400 hover:text-white text-sm flex items-center gap-1">
+                        <i class="ph ph-arrow-left"></i> Kembali
+                    </button>
+                </div>
+
+                <form id="mediaForm" onsubmit="event.preventDefault(); KioskApp.saveMedia();" class="space-y-4">
+                    <input type="hidden" id="editId" value="">
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Judul Media</label>
+                        <input type="text" id="inputTitle" required placeholder="Contoh: Bel Pelajaran Sekolah / Jadwal Sholat" class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-cyan-400">
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Tipe Media</label>
+                            <select id="inputType" class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-cyan-400">
+                                <option value="iframe">Website / Google Drive (Iframe)</option>
+                                <option value="video">Video (MP4 / WebM Direct)</option>
+                                <option value="youtube">YouTube (Video ID / URL)</option>
+                                <option value="image">Gambar (JPG / PNG / WebP)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Durasi Transisi (Detik)</label>
+                            <input type="number" id="inputDuration" min="5" value="30" required class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-cyan-400">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Sumber URL / Video ID</label>
+                        <input type="text" id="inputUrl" required placeholder="https://... atau YouTube ID" class="w-full bg-slate-900/90 border border-slate-700/80 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-cyan-400 font-mono text-xs">
+                        <p class="text-[11px] text-slate-400 mt-1">Mendukung link Google Drive View (otomatis diubah ke preview), URL GitHub Pages, dan video langsung.</p>
+                    </div>
+
+                    <!-- KONTROL SHOLAT: H-5 hingga H+15 (Total 20 Menit) -->
+                    <div class="p-4 bg-emerald-950/30 border border-emerald-600/40 rounded-xl">
+                        <label class="flex items-start gap-3 cursor-pointer">
+                            <input type="checkbox" id="inputIsPrayer" class="mt-1 w-5 h-5 rounded border-slate-700 bg-slate-900 text-emerald-500 focus:ring-emerald-500">
+                            <div>
+                                <span class="block text-sm font-bold text-emerald-400">Jadikan Media Waktu Sholat</span>
+                                <span class="block text-xs text-slate-400 mt-0.5">Media ini akan mengambil alih layar penuh pada H-5 Menit sebelum adzan hingga H+15 Menit setelah adzan (Total 20 Menit).</span>
+                            </div>
+                        </label>
+                    </div>
+
+                    <!-- KONTROL BEL SEKOLAH DENGAN PRESET TEMPLATE FLEKSIBEL -->
+                    <div class="p-4 bg-amber-950/30 border border-amber-600/40 rounded-xl space-y-3.5">
+                        <label class="flex items-start gap-3 cursor-pointer">
+                            <input type="checkbox" id="inputIsBell" onchange="document.getElementById('bellBox').classList.toggle('hidden', !this.checked)" class="mt-1 w-5 h-5 rounded border-slate-700 bg-slate-900 text-amber-500 focus:ring-amber-500">
+                            <div>
+                                <span class="block text-sm font-bold text-amber-400">Jadikan Media Bel Pelajaran Sekolah</span>
+                                <span class="block text-xs text-slate-400 mt-0.5">Mengambil alih layar pada H-30 Detik sebelum bel berbunyi hingga H+3 Menit setelah bel berbunyi (Total 3,5 Menit).</span>
+                            </div>
+                        </label>
+
+                        <div id="bellBox" class="hidden pt-3 border-t border-amber-800/40 space-y-3">
+                            <div>
+                                <label class="block text-xs font-semibold text-amber-300 uppercase tracking-wider mb-2 flex items-center justify-between">
+                                    <span>Pilih Template Jadwal Bel:</span>
+                                    <span id="selectedTemplateLabel" class="text-[11px] text-amber-400 font-mono">Reguler Aktif</span>
+                                </label>
+                                <!-- Template Preset Chips -->
+                                <div class="grid grid-cols-2 sm:grid-cols-3 gap-2" id="bellTemplateChips">
+                                    <button type="button" onclick="KioskApp.selectBellTemplate('reguler')" id="tplBtn_reguler" class="px-3 py-2 rounded-lg text-xs font-semibold border border-amber-500/50 bg-amber-900/40 text-amber-200 transition-all text-left flex items-center gap-1.5">
+                                        <i class="ph-bold ph-clock"></i> Reguler
+                                    </button>
+                                    <button type="button" onclick="KioskApp.selectBellTemplate('ulangan_2')" id="tplBtn_ulangan_2" class="px-3 py-2 rounded-lg text-xs font-semibold border border-slate-700 bg-slate-800/80 text-slate-300 hover:border-amber-500/30 transition-all text-left flex items-center gap-1.5">
+                                        <i class="ph-bold ph-exam"></i> Ulangan 2
+                                    </button>
+                                    <button type="button" onclick="KioskApp.selectBellTemplate('ulangan_3')" id="tplBtn_ulangan_3" class="px-3 py-2 rounded-lg text-xs font-semibold border border-slate-700 bg-slate-800/80 text-slate-300 hover:border-amber-500/30 transition-all text-left flex items-center gap-1.5">
+                                        <i class="ph-bold ph-exam"></i> Ulangan 3
+                                    </button>
+                                    <button type="button" onclick="KioskApp.selectBellTemplate('darurat_2')" id="tplBtn_darurat_2" class="px-3 py-2 rounded-lg text-xs font-semibold border border-slate-700 bg-slate-800/80 text-slate-300 hover:border-amber-500/30 transition-all text-left flex items-center gap-1.5">
+                                        <i class="ph-bold ph-warning"></i> Darurat 2
+                                    </button>
+                                    <button type="button" onclick="KioskApp.selectBellTemplate('darurat_3')" id="tplBtn_darurat_3" class="px-3 py-2 rounded-lg text-xs font-semibold border border-slate-700 bg-slate-800/80 text-slate-300 hover:border-amber-500/30 transition-all text-left flex items-center gap-1.5">
+                                        <i class="ph-bold ph-warning"></i> Darurat 3
+                                    </button>
+                                    <button type="button" onclick="KioskApp.selectBellTemplate('kustom')" id="tplBtn_kustom" class="px-3 py-2 rounded-lg text-xs font-semibold border border-slate-700 bg-slate-800/80 text-slate-300 hover:border-amber-500/30 transition-all text-left flex items-center gap-1.5">
+                                        <i class="ph-bold ph-gear"></i> Kustom
+                                    </button>
+                                </div>
+                            </div>
+
+                            <input type="hidden" id="inputBellTemplate" value="reguler">
+
+                            <!-- Visual Preview of Active Bell Times -->
+                            <div>
+                                <label class="block text-xs font-medium text-amber-300/80 mb-1.5">Pratinjau Jam Bel Aktif:</label>
+                                <div id="bellTimesPreview" class="flex flex-wrap gap-1.5 p-2 bg-slate-900/80 rounded-lg border border-slate-800 min-h-[38px] items-center">
+                                    <!-- Rendered dynamically -->
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-amber-300 mb-1">Daftar Jam Bel (Format HH:MM, pisahkan dengan koma):</label>
+                                <input type="text" id="inputBellTimes" oninput="KioskApp.renderBellTimeBadges(this.value)" placeholder="07:15, 07:55, 08:35, 09:15..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-400 font-mono text-xs">
+                                <p class="text-[11px] text-slate-400 mt-1">Anda dapat menyesuaikan jam bel di atas secara bebas kapan saja.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- KONTROL AUDIO -->
+                    <div class="p-4 bg-orange-950/30 border border-orange-600/40 rounded-xl">
+                        <label class="flex items-start gap-3 cursor-pointer">
+                            <input type="checkbox" id="inputIsMuted" class="mt-1 w-5 h-5 rounded border-slate-700 bg-slate-900 text-orange-500 focus:ring-orange-500">
+                            <div>
+                                <span class="block text-sm font-bold text-orange-400">Bisukan Audio (Mute)</span>
+                                <span class="block text-xs text-slate-400 mt-0.5">Disarankan aktif untuk video agar browser mengizinkan autoplay tanpa hambatan.</span>
+                            </div>
+                        </label>
+                    </div>
+
+                    <div class="pt-2 flex gap-3">
+                        <button type="submit" id="btnSubmitForm" class="flex-1 py-3 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-sm transition-all shadow-lg shadow-cyan-500/20">
+                            Suntikkan ke Database
+                        </button>
+                        <button type="button" onclick="KioskApp.toggleView('gallery')" class="px-5 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-sm">
+                            Batal
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </section>
+    </main>
+
+    <!-- SLIDESHOW KIOSK FULLSCREEN (DOUBLE-BUFFERED) -->
+    <div id="viewSlideshow" class="fixed inset-0 bg-black z-50 hidden flex items-center justify-center overflow-hidden select-none">
+        <!-- Buffer A -->
+        <div id="bufferA" class="media-crossfade absolute inset-0 w-full h-full flex items-center justify-center opacity-0 pointer-events-auto"></div>
+        <!-- Buffer B -->
+        <div id="bufferB" class="media-crossfade absolute inset-0 w-full h-full flex items-center justify-center opacity-0 pointer-events-auto"></div>
+
+        <!-- HUD Layer -->
+        <div id="slideshowHUD" class="absolute top-0 left-0 right-0 p-6 flex justify-between items-center bg-gradient-to-b from-black/80 via-black/30 to-transparent pointer-events-none transition-opacity duration-500 z-30">
+            <div>
+                <h2 id="hudTitle" class="text-lg font-bold text-white drop-shadow-md">Media Kiosk</h2>
+                <div class="flex items-center gap-2 mt-0.5">
+                    <span id="hudBadgeType" class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-cyan-900/80 text-cyan-300 border border-cyan-500/30">IFRAME</span>
+                    <span id="hudStatus" class="text-xs text-slate-300 font-mono">Rotasi Normal</span>
+                </div>
+            </div>
+            <div class="text-right pointer-events-auto">
+                <button onclick="KioskApp.closeSlideshow()" class="px-3.5 py-1.5 rounded-lg bg-black/60 hover:bg-red-950 text-slate-300 hover:text-red-300 border border-white/10 text-xs font-semibold backdrop-blur flex items-center gap-1.5 transition-all">
+                    <i class="ph-bold ph-x"></i> Keluar (Esc)
+                </button>
+                <p class="text-[10px] text-slate-400 mt-1">Tekan Spasi 3x / Esc untuk Admin</p>
             </div>
         </div>
 
-        <!-- View: Add / Edit Form -->
-        <div id="viewAdd" class="hidden max-w-2xl mx-auto glass-panel p-6 sm:p-8 rounded-2xl">
-            <h2 id="formTitle" class="text-2xl font-bold mb-6 text-white border-b border-slate-700 pb-4">Injeksi Media Baru</h2>
-            <input type="hidden" id="editId" value="">
-            
-            <div class="space-y-5">
-                <div>
-                    <label class="block text-sm font-medium text-slate-400 mb-1">Judul Media</label>
-                    <input type="text" id="inputTitle" placeholder="Misal: Profil Madrasah" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-cyan-500 transition-all">
-                </div>
-                
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                    <div>
-                        <label class="block text-sm font-medium text-slate-400 mb-1">Tipe Media</label>
-                        <select id="inputType" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-cyan-500 transition-all appearance-none cursor-pointer">
-                            <option value="iframe">Website / Google Drive (URL)</option>
-                            <option value="video">Video (URL MP4 / Langsung)</option>
-                            <option value="youtube">YouTube (URL / ID)</option>
-                            <option value="image">Gambar (URL)</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-slate-400 mb-1">Durasi Transisi Slide (Detik)</label>
-                        <input type="number" id="inputDuration" value="30" min="1" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-cyan-500 transition-all">
-                    </div>
-                    
-                    <div class="sm:col-span-2 mt-2 p-4 bg-emerald-900/20 border border-emerald-700/50 rounded-lg">
-                        <label class="flex items-center gap-3 cursor-pointer">
-                            <input type="checkbox" id="inputIsPrayer" class="w-6 h-6 rounded border-slate-600 bg-slate-900 text-emerald-500 focus:ring-emerald-500">
-                            <div>
-                                <span class="block text-sm font-bold text-emerald-400">Jadikan Media Waktu Sholat</span>
-                                <span class="block text-xs text-slate-400">Media ini akan mengambil alih layar sepenuhnya pada H-5 Menit hingga H+15 Menit jadwal sholat (Total 20 Menit).</span>
-                            </div>
-                        </label>
-                    </div>
+        <!-- Progress Bar -->
+        <div class="absolute bottom-0 left-0 right-0 h-1.5 bg-white/10 z-30">
+            <div id="slideProgressBar" class="h-full bg-cyan-400 w-0 transition-none shadow-[0_0_10px_#06b6d4]"></div>
+        </div>
+    </div>
 
-                    <div class="sm:col-span-2 mt-2 p-4 bg-orange-900/20 border border-orange-700/50 rounded-lg">
-                        <label class="flex items-center gap-3 cursor-pointer">
-                            <input type="checkbox" id="inputIsMuted" class="w-6 h-6 rounded border-slate-600 bg-slate-900 text-orange-500 focus:ring-orange-500">
-                            <div>
-                                <span class="block text-sm font-bold text-orange-400">Bisukan Audio (Mute)</span>
-                                <span class="block text-xs text-slate-400">Pilih ini jika Anda ingin video diputar membisu (menghindari blokir autoplay browser).</span>
-                            </div>
-                        </label>
-                    </div>
-                </div>
-
-                <div>
-                    <label class="block text-sm font-medium text-slate-400 mb-1">Sumber URL / ID</label>
-                    <input type="text" id="inputUrl" placeholder="https://..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-cyan-500 transition-all">
-                    <p class="text-xs text-slate-500 mt-2"><i class="ph-fill ph-info"></i> Paste link Google Drive Share, web, atau YouTube di sini.</p>
-                </div>
-                
-                <button onclick="App.addMedia()" class="w-full py-4 mt-4 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-bold rounded-xl shadow-lg transition-transform transform hover:-translate-y-0.5">
-                    <span id="submitBtnText">Suntikkan ke Database</span>
+    <!-- MODAL KONFIRMASI HAPUS (BEBAS ALERT / CONFIRM) -->
+    <div id="modalDelete" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="glass-panel p-6 rounded-2xl max-w-sm w-full border border-red-500/30 text-center space-y-4">
+            <div class="w-12 h-12 rounded-full bg-red-950/80 border border-red-500/40 text-red-400 flex items-center justify-center mx-auto text-2xl">
+                <i class="ph-bold ph-trash"></i>
+            </div>
+            <div>
+                <h3 class="text-base font-bold text-white">Hapus Entitas Media?</h3>
+                <p class="text-xs text-slate-400 mt-1">Media ini akan dimusnahkan secara permanen dari database.</p>
+            </div>
+            <div class="flex gap-2 pt-2">
+                <button onclick="KioskApp.executeDelete()" class="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs transition-all">
+                    Hapus Permanen
+                </button>
+                <button onclick="KioskApp.closeDeleteModal()" class="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold text-xs">
+                    Batal
                 </button>
             </div>
         </div>
-    </main>
-
-    <!-- Custom Modal Dialog (Menggantikan confirm bawaan browser) -->
-    <div id="deleteModal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4">
-        <div class="glass-panel p-6 rounded-2xl max-w-sm w-full border border-red-500/30 text-center">
-            <i class="ph-duotone ph-warning-circle text-5xl text-red-500 mb-3"></i>
-            <h3 class="text-lg font-bold text-white mb-2">Hapus Entitas Media?</h3>
-            <p class="text-xs text-slate-400 mb-6">Entitas ini akan dihapus secara permanen dari sistem.</p>
-            <div class="flex gap-3 justify-center">
-                <button onclick="App.closeDeleteModal()" class="px-5 py-2.5 rounded-lg bg-slate-800 text-slate-300 hover:bg-slate-700 text-sm font-medium">Batal</button>
-                <button id="btnConfirmDelete" class="px-5 py-2.5 rounded-lg bg-red-600 text-white hover:bg-red-500 text-sm font-medium shadow-lg shadow-red-600/30">Hapus</button>
-            </div>
-        </div>
     </div>
 
-    <!-- View: Slideshow Fullscreen (Kiosk Mode) -->
-    <div id="viewSlideshow" class="fixed inset-0 z-[100] bg-black hidden flex-col items-center justify-center select-none">
-        <!-- Shield Overlay -->
-        <div id="slideInteractionShield" class="absolute inset-0 z-[101] bg-transparent"></div>
+    <!-- TOAST CONTAINER -->
+    <div id="toastContainer" class="fixed bottom-6 right-6 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
-        <!-- HUD Wrapper -->
-        <div id="slideshowHUD" class="absolute inset-0 z-[102] pointer-events-none transition-opacity duration-500 opacity-0 flex flex-col justify-between">
-            <div>
-                <!-- Progress bar -->
-                <div class="w-full h-1.5 bg-slate-900/80">
-                    <div id="slideProgress" class="h-full bg-cyan-500 w-0 shadow-[0_0_10px_rgba(6,182,212,0.8)]"></div>
-                </div>
-                
-                <div class="flex justify-end p-6 gap-4">
-                    <div class="bg-black/70 text-cyan-400 px-4 py-2 rounded-lg backdrop-blur-md border border-white/10 font-mono flex items-center gap-2 shadow-lg">
-                        <i class="ph-duotone ph-timer text-xl animate-pulse"></i> 
-                        <span id="slideTimer" class="text-lg font-bold w-8 text-center">--s</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Bottom Bar -->
-            <div class="p-6">
-                <div class="inline-block bg-black/70 backdrop-blur-md border border-white/10 px-6 py-3 rounded-xl shadow-xl max-w-full">
-                    <h2 id="slideTitle" class="text-white text-xl font-bold truncate">Title</h2>
-                    <p class="text-[10px] text-slate-400 mt-1">Tekan SPACEBAR 3x secara cepat atau ESC untuk keluar.</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- Render Layer -->
-        <div id="slideContent" class="w-full h-full flex items-center justify-center p-0 z-[100] relative bg-black overflow-hidden">
-            <!-- Media disuntikkan secara dinamis di sini -->
-        </div>
-    </div>
-
-    <!-- Toast Notification -->
-    <div id="toastContainer" class="fixed bottom-6 right-6 z-[200] flex flex-col gap-3 pointer-events-none"></div>
-
+    <!-- FIREBASE SDK V9 MODULAR -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { getFirestore, collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, writeBatch } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
-        // ==========================================
-        // SAKLAR ARSITEKTUR MUTLAK
-        // ==========================================
-        // TRUE = Mode Preview (Mock data sesuai screenshot agar langsung tampil di editor)
-        // FALSE = Terhubung ke Database Firebase Cloud Anda secara real-time
-        const is_preview = false; 
-
-        // KREDENSIAL FIREBASE ASLI ANDA
+        // KREDENSIAL CLOUD FIREBASE RESMI ANDA
         const firebaseConfig = {
             apiKey: "AIzaSyA8XREeEtq3K0c7melRj1Y2xgRvlhEMAjk",
             authDomain: "gen-lang-client-0756249566.firebaseapp.com",
@@ -196,87 +301,286 @@
             measurementId: "G-VT430BGSL8"
         };
 
-        const omniAppId = 'omniscient_kiosk';
-        let app, db, auth, mediaCol;
+        let db = null;
+        let auth = null;
 
         if (!is_preview) {
             try {
-                app = initializeApp(firebaseConfig);
+                const app = initializeApp(firebaseConfig);
                 db = getFirestore(app);
                 auth = getAuth(app);
-                mediaCol = collection(db, 'artifacts', omniAppId, 'public', 'data', 'media');
+                signInAnonymously(auth).catch(err => {
+                    console.error("Firebase Anonymous Auth Error:", err);
+                });
             } catch (err) {
-                console.error("Gagal inisialisasi Firebase:", err);
+                console.error("Firebase Init Failed:", err);
             }
         }
 
-        window.App = {
-            currentView: 'gallery',
+        // PRESET TEMPLATE JADWAL BEL SEKOLAH
+        const BELL_PRESETS = {
+            reguler: {
+                name: "Reguler",
+                times: "07:15, 07:55, 08:35, 09:15, 09:35, 10:15, 11:45, 12:45, 13:25"
+            },
+            ulangan_2: {
+                name: "Ulangan 2",
+                times: "07:30, 09:00, 09:30, 11:00"
+            },
+            ulangan_3: {
+                name: "Ulangan 3",
+                times: "07:30, 08:50, 09:10, 10:30, 10:50, 12:10"
+            },
+            darurat_2: {
+                name: "Darurat 2",
+                times: "07:30, 08:15, 09:00, 09:20, 10:05, 10:50"
+            },
+            darurat_3: {
+                name: "Darurat 3",
+                times: "07:30, 08:10, 08:50, 09:10, 09:50, 10:30, 11:10"
+            },
+            kustom: {
+                name: "Kustom",
+                times: ""
+            }
+        };
+
+        window.KioskApp = {
             currentItems: [],
-            draggedItemIndex: null,
-            targetDeleteId: null,
-            
-            // Variabel Kiosk
             currentSlideIndex: 0,
-            currentPlayingId: null, // JANGKAR MEMORI: Mencegah Iframe/Video dimuat ulang jika medianya sama
-            slideshowInterval: null,
-            slideshowTimeout: null,
+            activeBuffer: 'bufferA',
+            slideTimer: null,
             hudTimer: null,
-            
-            // Variabel Waktu Sholat
+            targetDeleteId: null,
+
+            // Jangkar Memori (Anti-Reload untuk single media looping)
+            currentPlayingId: null,
+
+            // Penanda Autoplay Otomatis saat Buka Halaman
+            hasAutoStarted: false,
+
+            // Logika Waktu Sholat
             prayerJadwal: null,
             isPrayerModeActive: false,
             prayerInterval: null,
 
+            // Logika Bel Pelajaran Sekolah
+            isBellModeActive: false,
+            bellInterval: null,
+
             init: async function() {
-                this.setupEvents();
+                this.setupKeyboardEvents();
                 this.fetchPrayerTimes();
+                this.startBellMonitor();
+                this.renderBellTimeBadges(BELL_PRESETS.reguler.times);
 
                 if (is_preview) {
                     this.showToast("Berjalan di Mode Preview (Mock Data).", "info");
-                    // Data Mock Presisi Sesuai Screenshot Asli Anda
+                    // Data Mock Presisi Lengkap dengan Dukungan Template Bel
                     this.currentItems = [
-                        { id: 'm1', title: "Jadwal Sholat Live", type: "iframe", url: "https://officialsaprudin.github.io/JADWAL-SHOLAT/", duration: 30, isPrayer: true, isMuted: false, sortOrder: 0 },
-                        { id: 'm2', title: "Profile Video (Loop)", type: "video", url: "https://www.w3schools.com/html/mov_bbb.mp4", duration: 25, isPrayer: false, isMuted: true, sortOrder: 1 },
-                        { id: 'm3', title: "YouTube Cinematic", type: "youtube", url: "dQw4w9WgXcQ", duration: 15, isPrayer: false, isMuted: true, sortOrder: 2 }
+                        { id: 'm1', title: "Jadwal Sholat Live", type: "iframe", url: "https://officialsaprudin.github.io/JADWAL-SHOLAT/", duration: 30, isPrayer: true, isBell: false, bellTemplate: "reguler", bellTimes: "", isMuted: false },
+                        { id: 'm2', title: "Bel Pelajaran Sekolah", type: "iframe", url: "https://officialsaprudin.github.io/JADWAL-SHOLAT/", duration: 30, isPrayer: false, isBell: true, bellTemplate: "reguler", bellTimes: BELL_PRESETS.reguler.times, isMuted: false },
+                        { id: 'm3', title: "Profile Video (Loop)", type: "video", url: "https://www.w3schools.com/html/mov_bbb.mp4", duration: 25, isPrayer: false, isBell: false, bellTemplate: "reguler", bellTimes: "", isMuted: true },
+                        { id: 'm4', title: "YouTube Cinematic", type: "youtube", url: "dQw4w9WgXcQ", duration: 15, isPrayer: false, isBell: false, bellTemplate: "reguler", bellTimes: "", isMuted: true }
                     ];
                     this.renderGallery();
+
+                    // Langsung memutar media pertama tanpa menunggu tombol diklik
+                    if (!this.hasAutoStarted && this.currentItems.length > 0) {
+                        this.hasAutoStarted = true;
+                        this.startSlideshow(0);
+                    }
                 } else {
+                    this.showToast("Menghubungkan ke Cloud Singularity...", "info");
                     try {
-                        this.showToast("Menghubungkan ke Cloud Singularity...", "info");
-                        await signInAnonymously(auth);
-                        
-                        onSnapshot(mediaCol, (snapshot) => {
-                            const items = [];
-                            snapshot.forEach((doc) => { items.push({ id: doc.id, ...doc.data() }); });
-                            items.sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
-                            this.currentItems = items;
+                        onSnapshot(collection(db, "media"), (snapshot) => {
+                            this.currentItems = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
                             this.renderGallery();
+
+                            // Langsung memutar media pertama saat data Cloud diterima
+                            if (!this.hasAutoStarted && this.currentItems.length > 0) {
+                                this.hasAutoStarted = true;
+                                this.startSlideshow(0);
+                            }
                         }, (error) => {
-                            console.error("Gagal membaca Cloud:", error);
-                            this.showToast("GERBANG TERKUNCI: Buka Firebase -> Firestore Rules -> Allow Read/Write.", "error");
+                            this.showToast("GERBANG TERKUNCI: Periksa Firestore Rules.", "error");
                         });
-                    } catch (error) {
-                        this.showToast("Gagal Otorisasi Anonim.", "error");
+                    } catch (err) {
+                        this.showToast("Koneksi Cloud Terputus.", "error");
                     }
                 }
             },
 
+            selectBellTemplate: function(templateKey) {
+                const preset = BELL_PRESETS[templateKey];
+                if (!preset) return;
+
+                document.getElementById('inputBellTemplate').value = templateKey;
+                document.getElementById('selectedTemplateLabel').innerText = `${preset.name} Aktif`;
+
+                const allKeys = ['reguler', 'ulangan_2', 'ulangan_3', 'darurat_2', 'darurat_3', 'kustom'];
+                allKeys.forEach(key => {
+                    const btn = document.getElementById(`tplBtn_${key}`);
+                    if (!btn) return;
+                    if (key === templateKey) {
+                        btn.className = "px-3 py-2 rounded-lg text-xs font-semibold border border-amber-500/70 bg-amber-900/50 text-amber-200 transition-all text-left flex items-center gap-1.5 shadow-md shadow-amber-950";
+                    } else {
+                        btn.className = "px-3 py-2 rounded-lg text-xs font-semibold border border-slate-700 bg-slate-800/80 text-slate-300 hover:border-amber-500/30 transition-all text-left flex items-center gap-1.5";
+                    }
+                });
+
+                if (templateKey !== 'kustom') {
+                    document.getElementById('inputBellTimes').value = preset.times;
+                    this.renderBellTimeBadges(preset.times);
+                } else {
+                    const currentVal = document.getElementById('inputBellTimes').value;
+                    this.renderBellTimeBadges(currentVal);
+                }
+            },
+
+            renderBellTimeBadges: function(timesString) {
+                const container = document.getElementById('bellTimesPreview');
+                if (!container) return;
+                const times = (timesString || '').split(',').map(t => t.trim()).filter(Boolean);
+
+                if (times.length === 0) {
+                    container.innerHTML = `<span class="text-xs text-slate-500 italic">Belum ada jam bel yang diisi</span>`;
+                    return;
+                }
+
+                container.innerHTML = times.map(t => `
+                    <span class="px-2 py-0.5 rounded bg-amber-950/70 border border-amber-600/40 text-amber-300 font-mono text-[11px] flex items-center gap-1">
+                        <i class="ph-bold ph-bell-simple text-[10px]"></i> ${t}
+                    </span>
+                `).join('');
+            },
+
+            switchBellTemplateDirectly: async function(mediaId, newTemplateKey) {
+                const preset = BELL_PRESETS[newTemplateKey];
+                if (!preset) return;
+
+                const item = this.currentItems.find(i => i.id === mediaId);
+                if (!item) return;
+
+                item.bellTemplate = newTemplateKey;
+                if (newTemplateKey !== 'kustom') {
+                    item.bellTimes = preset.times;
+                }
+
+                if (is_preview) {
+                    this.renderGallery();
+                    this.showToast(`Template bel diubah ke: ${preset.name}`, "success");
+                } else {
+                    try {
+                        await updateDoc(doc(db, "media", mediaId), {
+                            bellTemplate: item.bellTemplate,
+                            bellTimes: item.bellTimes
+                        });
+                        this.showToast(`Cloud: Template bel menjadi ${preset.name}`, "success");
+                    } catch (err) {
+                        this.showToast("Gagal memperbarui template di Cloud.", "error");
+                    }
+                }
+            },
+
+            renderGallery: function() {
+                const grid = document.getElementById('galleryGrid');
+                const empty = document.getElementById('galleryEmpty');
+
+                if (this.currentItems.length === 0) {
+                    grid.innerHTML = '';
+                    empty.classList.remove('hidden');
+                    return;
+                }
+
+                empty.classList.add('hidden');
+                grid.innerHTML = this.currentItems.map((item) => {
+                    let iconMarkup = '<i class="ph-bold ph-globe text-cyan-400 text-6xl"></i>';
+                    let bgThumb = 'bg-[#0b2434]';
+
+                    if (item.type === 'video') {
+                        iconMarkup = '<i class="ph-bold ph-video-camera text-blue-400 text-6xl"></i>';
+                        bgThumb = 'bg-[#0f1d3a]';
+                    } else if (item.type === 'youtube') {
+                        iconMarkup = '<i class="ph-fill ph-youtube-logo text-red-500 text-6xl"></i>';
+                        bgThumb = 'bg-[#2d0e0e]';
+                    } else if (item.type === 'image') {
+                        iconMarkup = '<i class="ph-bold ph-image text-emerald-400 text-6xl"></i>';
+                        bgThumb = 'bg-[#0e2a22]';
+                    }
+
+                    const currentTpl = item.bellTemplate || 'reguler';
+                    const tplName = (BELL_PRESETS[currentTpl] ? BELL_PRESETS[currentTpl].name : currentTpl);
+
+                    return `
+                    <div class="glass-panel rounded-2xl overflow-hidden border border-slate-800 hover:border-cyan-500/40 transition-all flex flex-col group">
+                        <!-- Thumbnail Preview -->
+                        <div class="relative w-full h-44 ${bgThumb} flex items-center justify-center overflow-hidden border-b border-slate-800">
+                            ${iconMarkup}
+                            
+                            <!-- Badges -->
+                            <div class="absolute top-2.5 right-2.5 bg-black/70 backdrop-blur text-xs font-mono px-2.5 py-1 rounded-md text-cyan-300 flex items-center gap-1.5 border border-white/5">
+                                <i class="ph-bold ph-timer"></i> ${item.duration}s
+                            </div>
+                            ${item.isMuted ? `<div class="absolute top-10 right-2.5 bg-orange-600/90 text-xs px-2.5 py-1 rounded-md text-white shadow-lg flex items-center gap-1 font-semibold"><i class="ph-bold ph-speaker-slash"></i> Muted</div>` : ''}
+                            ${item.isPrayer ? `<div class="absolute top-2.5 left-2.5 bg-emerald-600 text-xs font-bold px-2.5 py-1 rounded-md text-white shadow-lg flex items-center gap-1"><i class="ph-fill ph-mosque"></i> SHOLAT</div>` : ''}
+                            ${item.isBell ? `<div class="absolute ${item.isPrayer ? 'top-10' : 'top-2.5'} left-2.5 bg-amber-600 text-xs font-bold px-2.5 py-1 rounded-md text-white shadow-lg flex items-center gap-1"><i class="ph-fill ph-bell-ringing"></i> BEL: ${tplName}</div>` : ''}
+                        </div>
+                        
+                        <!-- Card Details -->
+                        <div class="p-4 flex-1 flex flex-col justify-between">
+                            <div>
+                                <h3 class="font-bold text-white text-base group-hover:text-cyan-300 transition-colors line-clamp-1">${item.title}</h3>
+                                <p class="text-xs uppercase font-mono tracking-wider text-slate-400 mt-1">${item.type}</p>
+                                
+                                ${item.isBell ? `
+                                <div class="mt-3 p-2 bg-amber-950/30 border border-amber-600/30 rounded-xl space-y-1.5">
+                                    <div class="flex items-center justify-between text-xs">
+                                        <span class="text-amber-300 font-semibold flex items-center gap-1"><i class="ph-bold ph-sliders"></i> Template Aktif:</span>
+                                        <select onchange="KioskApp.switchBellTemplateDirectly('${item.id}', this.value)" class="bg-slate-900 border border-amber-600/40 text-amber-200 text-xs rounded-lg px-2 py-0.5 focus:outline-none focus:border-amber-400 cursor-pointer">
+                                            <option value="reguler" ${currentTpl === 'reguler' ? 'selected' : ''}>Reguler</option>
+                                            <option value="ulangan_2" ${currentTpl === 'ulangan_2' ? 'selected' : ''}>Ulangan 2</option>
+                                            <option value="ulangan_3" ${currentTpl === 'ulangan_3' ? 'selected' : ''}>Ulangan 3</option>
+                                            <option value="darurat_2" ${currentTpl === 'darurat_2' ? 'selected' : ''}>Darurat 2</option>
+                                            <option value="darurat_3" ${currentTpl === 'darurat_3' ? 'selected' : ''}>Darurat 3</option>
+                                            <option value="kustom" ${currentTpl === 'kustom' ? 'selected' : ''}>Kustom</option>
+                                        </select>
+                                    </div>
+                                    <p class="text-[10px] text-amber-200/70 font-mono truncate" title="${item.bellTimes || ''}">
+                                        ${item.bellTimes || 'Belum ada jam'}
+                                    </p>
+                                </div>` : ''}
+                            </div>
+                            <div class="flex items-center justify-end gap-2 pt-4 border-t border-slate-800/60 mt-3">
+                                <button onclick="KioskApp.editItem('${item.id}')" class="p-2 rounded-lg bg-slate-800 hover:bg-cyan-950 text-slate-300 hover:text-cyan-400 transition-colors" title="Edit">
+                                    <i class="ph-bold ph-pencil-simple text-base"></i>
+                                </button>
+                                <button onclick="KioskApp.promptDelete('${item.id}')" class="p-2 rounded-lg bg-slate-800 hover:bg-red-950 text-slate-300 hover:text-red-400 transition-colors" title="Hapus">
+                                    <i class="ph-bold ph-trash text-base"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>`;
+                }).join('');
+            },
+
             toggleView: function(viewName) {
-                this.currentView = viewName;
-                document.getElementById('btnGallery').className = "px-4 py-2 rounded-lg text-sm font-medium transition-all bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center gap-2";
-                document.getElementById('btnAdd').className = "px-4 py-2 rounded-lg text-sm font-medium transition-all bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center gap-2";
-                
-                document.getElementById('viewGallery').classList.add('hidden');
-                document.getElementById('viewAdd').classList.add('hidden');
+                const navGallery = document.getElementById('btnNavGallery');
+                const navAdd = document.getElementById('btnNavAdd');
+                const viewGallery = document.getElementById('viewGallery');
+                const viewAdd = document.getElementById('viewAdd');
 
                 if (viewName === 'gallery') {
-                    document.getElementById('btnGallery').className = "px-4 py-2 rounded-lg text-sm font-medium transition-all bg-blue-600 text-white shadow-lg shadow-blue-500/30 flex items-center gap-2";
-                    document.getElementById('viewGallery').classList.remove('hidden');
+                    viewGallery.classList.remove('hidden');
+                    viewAdd.classList.add('hidden');
+                    navGallery.className = "px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-2 transition-all bg-blue-600 text-white shadow-lg shadow-blue-600/30";
+                    navAdd.className = "px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-2 transition-all bg-slate-800/90 text-slate-300 hover:text-white hover:bg-slate-700/80 border border-slate-700/60";
                     this.resetForm();
-                } else if (viewName === 'add') {
-                    document.getElementById('btnAdd').className = "px-4 py-2 rounded-lg text-sm font-medium transition-all bg-blue-600 text-white shadow-lg shadow-blue-500/30 flex items-center gap-2";
-                    document.getElementById('viewAdd').classList.remove('hidden');
+                } else {
+                    viewGallery.classList.add('hidden');
+                    viewAdd.classList.remove('hidden');
+                    navAdd.className = "px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-2 transition-all bg-blue-600 text-white shadow-lg shadow-blue-600/30";
+                    navGallery.className = "px-4 py-2 rounded-xl text-sm font-semibold flex items-center gap-2 transition-all bg-slate-800/90 text-slate-300 hover:text-white hover:bg-slate-700/80 border border-slate-700/60";
                 }
             },
 
@@ -287,19 +591,24 @@
                 document.getElementById('inputUrl').value = '';
                 document.getElementById('inputDuration').value = '30';
                 document.getElementById('inputIsPrayer').checked = false;
+                document.getElementById('inputIsBell').checked = false;
+                this.selectBellTemplate('reguler');
+                document.getElementById('bellBox').classList.add('hidden');
                 document.getElementById('inputIsMuted').checked = false;
-                
-                document.getElementById('formTitle').innerText = "Injeksi Media Baru";
-                document.getElementById('submitBtnText').innerText = "Suntikkan ke Database";
+                document.getElementById('formTitle').innerHTML = `<i class="ph-bold ph-plus-circle text-cyan-400"></i> Injeksi Media Baru`;
+                document.getElementById('btnSubmitForm').innerText = "Suntikkan ke Database";
             },
 
-            addMedia: async function() {
+            saveMedia: async function() {
                 const editId = document.getElementById('editId').value;
                 const title = document.getElementById('inputTitle').value.trim() || 'Tanpa Judul';
                 let type = document.getElementById('inputType').value;
                 let url = document.getElementById('inputUrl').value.trim();
                 const duration = parseInt(document.getElementById('inputDuration').value) || 15;
                 const isPrayer = document.getElementById('inputIsPrayer').checked;
+                const isBell = document.getElementById('inputIsBell').checked;
+                const bellTemplate = document.getElementById('inputBellTemplate').value || 'reguler';
+                const bellTimes = document.getElementById('inputBellTimes').value.trim();
                 const isMuted = document.getElementById('inputIsMuted').checked;
 
                 if (!url) return this.showToast("URL tidak boleh kosong.", "error");
@@ -311,42 +620,39 @@
                     this.showToast("Link Google Drive dienkapsulasi menjadi Iframe.", "info");
                 }
 
-                document.getElementById('submitBtnText').innerText = "Mentransmisi...";
-
-                const payload = { title, type, url, duration, isPrayer, isMuted };
+                const payload = { title, type, url, duration, isPrayer, isBell, bellTemplate, bellTimes, isMuted };
 
                 if (is_preview) {
                     if (editId) {
-                        const idx = this.currentItems.findIndex(m => m.id === editId);
-                        this.currentItems[idx] = { ...this.currentItems[idx], ...payload };
+                        const idx = this.currentItems.findIndex(i => i.id === editId);
+                        if (idx !== -1) this.currentItems[idx] = { ...this.currentItems[idx], ...payload };
+                        this.showToast("Entitas berhasil diperbarui.", "success");
                     } else {
-                        payload.id = Date.now().toString();
-                        payload.sortOrder = this.currentItems.length;
-                        this.currentItems.push(payload);
+                        this.currentItems.push({ id: 'm_' + Date.now(), ...payload });
+                        this.showToast("Media berhasil disuntikkan.", "success");
                     }
                     this.renderGallery();
                     this.toggleView('gallery');
-                    this.showToast("Entitas disimpan (Mode Offline).", "success");
                 } else {
                     try {
                         if (editId) {
-                            await updateDoc(doc(mediaCol, editId), payload);
+                            await updateDoc(doc(db, "media", editId), payload);
+                            this.showToast("Cloud diperbarui.", "success");
                         } else {
-                            payload.sortOrder = this.currentItems.length;
-                            await addDoc(mediaCol, payload);
+                            payload.createdAt = serverTimestamp();
+                            await addDoc(collection(db, "media"), payload);
+                            this.showToast("Disimpan ke Cloud.", "success");
                         }
                         this.toggleView('gallery');
-                        this.showToast("Transmisi ke Cloud berhasil.", "success");
-                    } catch (error) {
-                        this.showToast("Gagal menyimpan. Pastikan Rule Database terbuka.", "error");
-                        document.getElementById('submitBtnText').innerText = "Coba Lagi";
+                    } catch (err) {
+                        this.showToast("Gagal menyimpan ke Cloud.", "error");
                     }
                 }
             },
 
             editItem: function(id) {
                 const item = this.currentItems.find(i => i.id === id);
-                if(!item) return;
+                if (!item) return;
 
                 document.getElementById('editId').value = id;
                 document.getElementById('inputTitle').value = item.title;
@@ -354,330 +660,329 @@
                 document.getElementById('inputUrl').value = item.url;
                 document.getElementById('inputDuration').value = item.duration;
                 document.getElementById('inputIsPrayer').checked = item.isPrayer || false;
+                document.getElementById('inputIsBell').checked = item.isBell || false;
+
+                const tpl = item.bellTemplate || 'reguler';
+                this.selectBellTemplate(tpl);
+                if (item.bellTimes) {
+                    document.getElementById('inputBellTimes').value = item.bellTimes;
+                    this.renderBellTimeBadges(item.bellTimes);
+                }
+
+                document.getElementById('bellBox').classList.toggle('hidden', !item.isBell);
                 document.getElementById('inputIsMuted').checked = item.isMuted || false;
 
-                document.getElementById('formTitle').innerText = "Modifikasi Entitas";
-                document.getElementById('submitBtnText').innerText = "Perbarui Database";
+                document.getElementById('formTitle').innerHTML = `<i class="ph-bold ph-pencil-simple text-cyan-400"></i> Modifikasi Entitas`;
+                document.getElementById('btnSubmitForm').innerText = "Perbarui Database";
                 this.toggleView('add');
             },
 
             promptDelete: function(id) {
                 this.targetDeleteId = id;
-                document.getElementById('deleteModal').classList.remove('hidden');
-                document.getElementById('btnConfirmDelete').onclick = () => this.executeDelete();
+                document.getElementById('modalDelete').classList.remove('hidden');
             },
 
             closeDeleteModal: function() {
                 this.targetDeleteId = null;
-                document.getElementById('deleteModal').classList.add('hidden');
+                document.getElementById('modalDelete').classList.add('hidden');
             },
 
             executeDelete: async function() {
+                if (!this.targetDeleteId) return;
                 const id = this.targetDeleteId;
-                if(!id) return;
                 this.closeDeleteModal();
 
                 if (is_preview) {
                     this.currentItems = this.currentItems.filter(i => i.id !== id);
                     this.renderGallery();
+                    this.showToast("Entitas dimusnahkan.", "success");
                 } else {
-                    await deleteDoc(doc(mediaCol, id));
-                }
-                this.showToast("Entitas dihancurkan.", "success");
-            },
-
-            renderGallery: function() {
-                const grid = document.getElementById('mediaGrid');
-                const empty = document.getElementById('emptyState');
-                grid.innerHTML = '';
-
-                if (this.currentItems.length === 0) {
-                    empty.classList.remove('hidden'); empty.classList.add('flex'); return;
-                }
-                empty.classList.add('hidden'); empty.classList.remove('flex');
-
-                this.currentItems.forEach((item, index) => {
-                    let thumb = '';
-                    if (item.type === 'youtube') thumb = `<div class="bg-[#2a0e0e] w-full h-full flex items-center justify-center"><i class="ph-fill ph-youtube-logo text-5xl text-red-500"></i></div>`;
-                    else if (item.type === 'video') thumb = `<div class="bg-[#0b1b36] w-full h-full flex items-center justify-center"><i class="ph-fill ph-video-camera text-5xl text-blue-400"></i></div>`;
-                    else if (item.type === 'iframe') thumb = `<div class="bg-[#092535] w-full h-full flex items-center justify-center"><i class="ph-duotone ph-globe text-5xl text-cyan-400"></i></div>`;
-                    else thumb = `<img src="${item.url}" class="w-full h-full object-cover">`;
-
-                    const card = document.createElement('div');
-                    card.className = "glass-panel rounded-xl overflow-hidden group shadow-lg flex flex-col cursor-grab active:cursor-grabbing border-2 border-transparent hover:border-cyan-500/50 transition-all duration-300";
-                    card.draggable = true;
-
-                    // DRAG AND DROP
-                    card.ondragstart = () => { this.draggedItemIndex = index; setTimeout(() => card.classList.add('opacity-50'), 0); };
-                    card.ondragend = () => card.classList.remove('opacity-50');
-                    card.ondragover = (e) => { e.preventDefault(); card.classList.add('border-cyan-400', 'border-dashed'); };
-                    card.ondragleave = () => card.classList.remove('border-cyan-400', 'border-dashed');
-                    card.ondrop = (e) => { e.preventDefault(); card.classList.remove('border-cyan-400', 'border-dashed'); this.handleDrop(index); };
-
-                    card.innerHTML = `
-                        <div class="relative h-44 bg-black overflow-hidden" onclick="App.startSlideshow(${index})">
-                            ${thumb}
-                            <div class="absolute top-2.5 right-2.5 bg-black/70 backdrop-blur text-xs font-mono px-2.5 py-1 rounded-md text-cyan-300 flex items-center gap-1.5 border border-white/5">
-                                <i class="ph-bold ph-timer"></i> ${item.duration}s
-                            </div>
-                            ${item.isMuted ? `<div class="absolute top-10 right-2.5 bg-orange-600/90 text-xs px-2.5 py-1 rounded-md text-white shadow-lg flex items-center gap-1 font-semibold"><i class="ph-bold ph-speaker-slash"></i> Muted</div>` : ''}
-                            ${item.isPrayer ? `<div class="absolute top-2.5 left-2.5 bg-emerald-600 text-xs font-bold px-2.5 py-1 rounded-md text-white shadow-lg flex items-center gap-1"><i class="ph-fill ph-mosque"></i> SHOLAT</div>` : ''}
-                        </div>
-                        <div class="p-4 flex-1 flex flex-col justify-between">
-                            <h3 class="font-bold text-white truncate text-lg">${item.title}</h3>
-                            <div class="flex justify-between items-center mt-4">
-                                <span class="text-xs text-slate-400 uppercase font-bold tracking-wider">${item.type}</span>
-                                <div class="flex gap-2">
-                                    <button onclick="App.editItem('${item.id}')" class="text-blue-400 hover:bg-blue-400/20 p-1.5 rounded transition"><i class="ph-bold ph-pencil-simple text-lg"></i></button>
-                                    <button onclick="App.promptDelete('${item.id}')" class="text-red-400 hover:bg-red-400/20 p-1.5 rounded transition"><i class="ph-bold ph-trash text-lg"></i></button>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                    grid.appendChild(card);
-                });
-            },
-
-            handleDrop: async function(targetIndex) {
-                if (this.draggedItemIndex === null || this.draggedItemIndex === targetIndex) return;
-                const draggedItem = this.currentItems.splice(this.draggedItemIndex, 1)[0];
-                this.currentItems.splice(targetIndex, 0, draggedItem);
-                this.currentItems.forEach((item, idx) => { item.sortOrder = idx; });
-                this.renderGallery();
-
-                if (!is_preview) {
-                    const batch = writeBatch(db);
-                    this.currentItems.forEach(item => { batch.update(doc(mediaCol, item.id), { sortOrder: item.sortOrder }); });
-                    await batch.commit();
+                    try {
+                        await deleteDoc(doc(db, "media", id));
+                        this.showToast("Dihapus dari Cloud.", "success");
+                    } catch (err) {
+                        this.showToast("Gagal menghapus entitas.", "error");
+                    }
                 }
             },
 
+            // JADWAL SHOLAT: H-5 hingga H+15 (Total 20 Menit)
             fetchPrayerTimes: async function() {
                 try {
-                    const d = new Date();
-                    const y = d.getFullYear(), m = String(d.getMonth() + 1).padStart(2, '0'), day = String(d.getDate()).padStart(2, '0');
-                    const res = await fetch(`https://api.myquran.com/v2/sholat/jadwal/2113/${y}/${m}/${day}`);
+                    const today = new Date();
+                    const y = today.getFullYear();
+                    const m = String(today.getMonth() + 1).padStart(2, '0');
+                    const d = String(today.getDate()).padStart(2, '0');
+
+                    // ID 2113 = Kota Banjarmasin
+                    const res = await fetch(`https://api.myquran.com/v2/sholat/jadwal/2113/${y}/${m}/${d}`);
                     const data = await res.json();
-                    if(data.status) {
+                    if (data.status && data.data.jadwal) {
                         this.prayerJadwal = data.data.jadwal;
-                        document.getElementById('astralSyncStatus').innerText = "Astral (BANJARMASIN 2113) Sinkron.";
+                        document.getElementById('astralStatus').innerText = "Astral (BANJARMASIN 2113) Sinkron.";
                         this.startPrayerMonitor();
                     }
-                } catch(e) { console.error("Astral Sync Error:", e); }
+                } catch (e) {
+                    document.getElementById('astralStatus').innerText = "Gagal memindai jadwal sholat.";
+                }
             },
 
             startPrayerMonitor: function() {
-                if(this.prayerInterval) clearInterval(this.prayerInterval);
+                if (this.prayerInterval) clearInterval(this.prayerInterval);
                 const check = () => {
-                    if(!this.prayerJadwal) return;
+                    if (!this.prayerJadwal) return;
                     const now = new Date();
                     const currentMins = (now.getHours() * 60) + now.getMinutes();
                     const times = [this.prayerJadwal.subuh, this.prayerJadwal.dzuhur, this.prayerJadwal.ashar, this.prayerJadwal.maghrib, this.prayerJadwal.isya];
-                    
-                    let isTimeNow = false;
-                    for(let t of times) {
-                        if(!t || t === "-") continue;
+
+                    let isPrayerNow = false;
+                    for (const t of times) {
+                        if (!t) continue;
                         const [h, min] = t.split(':').map(Number);
                         const targetMins = (h * 60) + min;
-                        
-                        // JENDELA WAKTU SHOLAT: H-5 hingga H+15 (Total 20 Menit Layar Diambil Alih)
-                        if(currentMins >= (targetMins - 5) && currentMins < (targetMins + 15)) {
-                            isTimeNow = true;
+
+                        // JENDELA SHOLAT: H-5 Menit sampai H+15 Menit (Total 20 Menit)
+                        if (currentMins >= (targetMins - 5) && currentMins < (targetMins + 15)) {
+                            isPrayerNow = true;
                             break;
                         }
                     }
 
-                    if(isTimeNow && !this.isPrayerModeActive) {
+                    if (isPrayerNow && !this.isPrayerModeActive) {
                         this.isPrayerModeActive = true;
-                        this.showToast("WAKTU SHOLAT: Layar diambil alih otomatis (20 Menit).", "info");
-                        if(!document.getElementById('viewSlideshow').classList.contains('hidden')) {
-                            this.startSlideshow(0); 
+                        this.showToast("WAKTU SHOLAT: Layar diambil alih (H-5 hingga H+15).", "info");
+                        if (!document.getElementById('viewSlideshow').classList.contains('hidden')) {
+                            this.startSlideshow(0);
                         }
-                    } else if(!isTimeNow && this.isPrayerModeActive) {
+                    } else if (!isPrayerNow && this.isPrayerModeActive) {
                         this.isPrayerModeActive = false;
-                        if(!document.getElementById('viewSlideshow').classList.contains('hidden')) {
-                            this.startSlideshow(0); 
+                        this.showToast("WAKTU SHOLAT SELESAI: Kembali ke rotasi normal.", "success");
+                        if (!document.getElementById('viewSlideshow').classList.contains('hidden')) {
+                            this.startSlideshow(0);
                         }
                     }
                 };
 
                 check();
-                this.prayerInterval = setInterval(check, 10000); // Radar berdenyut setiap 10 detik
+                this.prayerInterval = setInterval(check, 10000);
             },
 
-            setupEvents: function() {
-                const shield = document.getElementById('slideInteractionShield');
-                const triggerHUD = () => {
-                    const hud = document.getElementById('slideshowHUD');
-                    hud.classList.remove('opacity-0');
-                    document.getElementById('viewSlideshow').classList.remove('no-cursor');
-                    clearTimeout(this.hudTimer);
-                    this.hudTimer = setTimeout(() => {
-                        hud.classList.add('opacity-0');
-                        document.getElementById('viewSlideshow').classList.add('no-cursor');
-                    }, 2500); 
-                };
-                shield.addEventListener('mousemove', triggerHUD);
-                shield.addEventListener('click', triggerHUD);
-                
-                // Escape Hatch (Spasi 3x atau ESC)
-                let spaceCount = 0, spaceTimer = null;
-                document.addEventListener('keydown', (e) => {
-                    const view = document.getElementById('viewSlideshow');
-                    if (view.classList.contains('hidden')) return;
-                    
-                    if (e.code === 'Escape') this.closeSlideshow();
-                    if (e.code === 'Space') {
-                        spaceCount++;
-                        clearTimeout(spaceTimer);
-                        spaceTimer = setTimeout(() => spaceCount = 0, 1000); 
-                        if (spaceCount >= 3) { spaceCount = 0; this.closeSlideshow(); }
+            // JADWAL BEL SEKOLAH: H-30 Detik hingga H+3 Menit (Total 3.5 Menit)
+            startBellMonitor: function() {
+                if (this.bellInterval) clearInterval(this.bellInterval);
+                const check = () => {
+                    const bellItems = this.currentItems.filter(i => i.isBell && i.bellTimes);
+                    if (bellItems.length === 0) {
+                        if (this.isBellModeActive) {
+                            this.isBellModeActive = false;
+                            if (!document.getElementById('viewSlideshow').classList.contains('hidden')) {
+                                this.startSlideshow(0);
+                            }
+                        }
+                        return;
                     }
-                });
+
+                    const now = new Date();
+                    const currentSecs = (now.getHours() * 3600) + (now.getMinutes() * 60) + now.getSeconds();
+
+                    let isBellNow = false;
+                    for (const item of bellItems) {
+                        const times = item.bellTimes.split(',').map(t => t.trim()).filter(Boolean);
+                        for (const timeStr of times) {
+                            const parts = timeStr.split(':').map(Number);
+                            if (parts.length < 2 || isNaN(parts[0]) || isNaN(parts[1])) continue;
+                            const targetSecs = (parts[0] * 3600) + (parts[1] * 60);
+
+                            // JENDELA BEL: H-30 Detik sampai H+180 Detik (3 Menit pasca-bel)
+                            const startWindow = targetSecs - 30;
+                            const endWindow = targetSecs + 180;
+
+                            if (currentSecs >= startWindow && currentSecs < endWindow) {
+                                isBellNow = true;
+                                break;
+                            }
+                        }
+                        if (isBellNow) break;
+                    }
+
+                    if (isBellNow && !this.isBellModeActive) {
+                        this.isBellModeActive = true;
+                        this.showToast("BEL SEKOLAH: Layar diambil alih (H-30s hingga H+3m).", "info");
+                        if (!document.getElementById('viewSlideshow').classList.contains('hidden')) {
+                            this.startSlideshow(0);
+                        }
+                    } else if (!isBellNow && this.isBellModeActive) {
+                        this.isBellModeActive = false;
+                        this.showToast("BEL SELESAI: Layar kembali normal.", "success");
+                        if (!document.getElementById('viewSlideshow').classList.contains('hidden')) {
+                            this.startSlideshow(0);
+                        }
+                    }
+                };
+
+                check();
+                this.bellInterval = setInterval(check, 1000);
             },
 
             startSlideshow: function(startIndex = 0) {
-                if (this.currentItems.length === 0) return this.showToast("Galeri kosong.", "error");
-                const view = document.getElementById('viewSlideshow');
-                view.classList.remove('hidden');
-                
-                this.currentPlayingId = null;
-                document.getElementById('slideContent').innerHTML = '';
+                if (this.currentItems.length === 0) return this.showToast("Tidak ada media untuk diputar.", "error");
 
-                this.playSlide(startIndex);
-            },
-
-            playSlide: function(index) {
-                let activeItems = this.currentItems;
-                if(this.isPrayerModeActive) {
-                    const prayerMedia = this.currentItems.filter(i => i.isPrayer);
-                    if(prayerMedia.length > 0) activeItems = prayerMedia;
-                }
-
-                if (activeItems.length === 0) return this.closeSlideshow();
-                if (index >= activeItems.length) index = 0;
-                
-                this.currentSlideIndex = index;
-                const item = activeItems[index];
-                const durationSeconds = parseInt(item.duration) || 15;
-                
-                document.getElementById('slideTitle').textContent = item.title;
-
-                // =========================================================
-                // JANGKAR MEMORI (ANTI-RELOAD / ANTI-BLANK):
-                // Jika media berikutnya sama persis dengan yang sedang tayang,
-                // lewati render HTML agar web/video tidak berkedip atau muat ulang!
-                // =========================================================
-                if (this.currentPlayingId === item.id) {
-                    this.resetProgressBar(durationSeconds);
-                    this.startSlideTimers(durationSeconds, index);
-                    return;
-                }
-                
-                this.currentPlayingId = item.id;
-
-                // =========================================================
-                // DOUBLE-BUFFERING CROSSFADE (ANTI BLACK SCREEN)
-                // =========================================================
-                const contentContainer = document.getElementById('slideContent');
-                const oldLayers = contentContainer.querySelectorAll('.slide-layer');
-                oldLayers.forEach(layer => { layer.style.zIndex = '1'; });
-
-                let mediaHtml = '';
-                const mutedAttr = item.isMuted ? 'muted' : '';
-                const ytMuteParam = item.isMuted ? '&mute=1' : '';
-
-                if (item.type === 'youtube') {
-                    let yId = item.url.includes('v=') ? item.url.split('v=')[1].split('&')[0] : (item.url.includes('youtu.be/') ? item.url.split('youtu.be/')[1].split('?')[0] : item.url);
-                    // YouTube Gapless Temporal Looping
-                    mediaHtml = `<iframe class="w-full h-full pointer-events-none scale-105" src="https://www.youtube.com/embed/${yId}?autoplay=1&controls=0&loop=1&playlist=${yId}${ytMuteParam}&modestbranding=1" allow="autoplay" frameborder="0"></iframe>`;
-                } else if (item.type === 'video') {
-                    // Video Lokal Seamless Looping
-                    mediaHtml = `<video class="w-full h-full object-contain bg-black" src="${item.url}" autoplay loop playsinline ${mutedAttr}></video>`;
-                } else if (item.type === 'iframe') {
-                    mediaHtml = `<iframe class="w-full h-full border-none bg-black" src="${item.url}" sandbox="allow-same-origin allow-scripts allow-popups allow-forms"></iframe>`;
-                } else {
-                    mediaHtml = `<img class="w-full h-full object-contain bg-black" src="${item.url}">`;
-                }
-
-                const newLayer = document.createElement('div');
-                newLayer.className = `slide-layer absolute inset-0 w-full h-full z-10 bg-black opacity-0 trans-fade`;
-                newLayer.innerHTML = mediaHtml;
-
-                // Seamless looping handler untuk tag video (mencegah black frame saat loop)
-                const vidEl = newLayer.querySelector('video');
-                if (vidEl) {
-                    vidEl.ontimeupdate = () => {
-                        if (vidEl.duration && vidEl.currentTime > vidEl.duration - 0.15) {
-                            vidEl.currentTime = 0.02;
-                            vidEl.play();
-                        }
-                    };
-                }
-
-                contentContainer.appendChild(newLayer);
-
-                // Buang layer lama setelah transisi fade selesai
-                setTimeout(() => {
-                    oldLayers.forEach(layer => layer.remove());
-                }, 1000);
-
-                this.resetProgressBar(durationSeconds);
-                this.startSlideTimers(durationSeconds, index);
-            },
-
-            resetProgressBar: function(durationSeconds) {
-                const pBar = document.getElementById('slideProgress');
-                pBar.style.transition = 'none'; 
-                pBar.style.width = '0%';
-                
-                setTimeout(() => {
-                    pBar.style.transition = `width ${durationSeconds}s linear`;
-                    pBar.style.width = '100%';
-                }, 50);
-            },
-
-            startSlideTimers: function(durationSeconds, currentIndex) {
-                clearInterval(this.slideshowInterval);
-                clearTimeout(this.slideshowTimeout);
-
-                let timeLeft = durationSeconds;
-                document.getElementById('slideTimer').textContent = timeLeft + 's';
-
-                this.slideshowInterval = setInterval(() => {
-                    timeLeft--;
-                    if (timeLeft >= 0) document.getElementById('slideTimer').textContent = timeLeft + 's';
-                }, 1000);
-
-                this.slideshowTimeout = setTimeout(() => {
-                    this.playSlide(currentIndex + 1);
-                }, durationSeconds * 1000);
+                const container = document.getElementById('viewSlideshow');
+                container.classList.remove('hidden');
+                this.currentSlideIndex = startIndex;
+                this.playSlide(this.currentSlideIndex);
             },
 
             closeSlideshow: function() {
-                const view = document.getElementById('viewSlideshow');
-                view.classList.add('hidden');
-                
-                clearInterval(this.slideshowInterval);
-                clearTimeout(this.slideshowTimeout);
-                clearTimeout(this.hudTimer);
-                
+                if (this.slideTimer) clearTimeout(this.slideTimer);
+                document.getElementById('viewSlideshow').classList.add('hidden');
+                document.getElementById('bufferA').innerHTML = '';
+                document.getElementById('bufferB').innerHTML = '';
+                document.getElementById('bufferA').style.opacity = '0';
+                document.getElementById('bufferB').style.opacity = '0';
                 this.currentPlayingId = null;
-                document.getElementById('slideContent').innerHTML = '';
             },
 
-            showToast: function(msg, type = "info") {
+            playSlide: function(index) {
+                let activePlaylist = this.currentItems;
+
+                if (this.isBellModeActive) {
+                    const bellMedia = this.currentItems.filter(i => i.isBell);
+                    if (bellMedia.length > 0) activePlaylist = bellMedia;
+                } else if (this.isPrayerModeActive) {
+                    const prayerMedia = this.currentItems.filter(i => i.isPrayer);
+                    if (prayerMedia.length > 0) activePlaylist = prayerMedia;
+                }
+
+                if (activePlaylist.length === 0) return this.closeSlideshow();
+                if (index >= activePlaylist.length) index = 0;
+                this.currentSlideIndex = index;
+                const media = activePlaylist[index];
+
+                // Update HUD
+                document.getElementById('hudTitle').innerText = media.title;
+                document.getElementById('hudBadgeType').innerText = media.type;
+                document.getElementById('hudStatus').innerText = this.isBellModeActive ? "Mode Bel Sekolah" : (this.isPrayerModeActive ? "Mode Waktu Sholat" : "Rotasi Normal");
+
+                // Progress Bar Animation
+                const pBar = document.getElementById('slideProgressBar');
+                pBar.style.transition = 'none';
+                pBar.style.width = '0%';
+                setTimeout(() => {
+                    pBar.style.transition = `width ${media.duration}s linear`;
+                    pBar.style.width = '100%';
+                }, 50);
+
+                // JANGKAR MEMORI: Jika media yang sama di-loop (web sholat atau web bel tunggal)
+                // Jangan buat ulang DOM / jangan reload, pertahankan web berjalan lancar!
+                if (this.currentPlayingId === media.id) {
+                    if (this.slideTimer) clearTimeout(this.slideTimer);
+                    this.slideTimer = setTimeout(() => {
+                        this.playSlide(this.currentSlideIndex + 1);
+                    }, media.duration * 1000);
+                    return;
+                }
+
+                // Double Buffering: Siapkan target buffer baru
+                const nextBufferId = (this.activeBuffer === 'bufferA') ? 'bufferB' : 'bufferA';
+                const currentBufferEl = document.getElementById(this.activeBuffer);
+                const nextBufferEl = document.getElementById(nextBufferId);
+
+                // Generate Content dengan Seamless Temporal Looping
+                let contentHTML = '';
+                if (media.type === 'iframe') {
+                    contentHTML = `<iframe src="${media.url}" class="w-full h-full border-none pointer-events-auto" sandbox="allow-scripts allow-same-origin allow-presentation allow-forms"></iframe>`;
+                } else if (media.type === 'youtube') {
+                    let yId = media.url;
+                    if (media.url.includes('v=')) yId = media.url.split('v=')[1].split('&')[0];
+                    else if (media.url.includes('youtu.be/')) yId = media.url.split('youtu.be/')[1].split('?')[0];
+                    contentHTML = `<iframe src="https://www.youtube.com/embed/${yId}?autoplay=1&controls=0&loop=1&playlist=${yId}&modestbranding=1&rel=0${media.isMuted ? '&mute=1' : ''}" class="w-full h-full border-none pointer-events-auto scale-105" allow="autoplay; encrypted-media"></iframe>`;
+                } else if (media.type === 'video') {
+                    contentHTML = `<video src="${media.url}" autoplay loop ${media.isMuted ? 'muted' : ''} class="w-full h-full object-contain pointer-events-none" ontimeupdate="if(this.duration - this.currentTime < 0.15){ this.currentTime = 0.05; }"></video>`;
+                } else if (media.type === 'image') {
+                    contentHTML = `<img src="${media.url}" alt="${media.title}" class="w-full h-full object-contain pointer-events-none">`;
+                }
+
+                nextBufferEl.innerHTML = contentHTML;
+
+                // Eksekusi Crossfade tanpa layar hitam
+                setTimeout(() => {
+                    nextBufferEl.style.opacity = '1';
+                    currentBufferEl.style.opacity = '0';
+                    this.activeBuffer = nextBufferId;
+                    this.currentPlayingId = media.id;
+
+                    // Bersihkan buffer lama setelah transisi selesai
+                    setTimeout(() => {
+                        currentBufferEl.innerHTML = '';
+                    }, 800);
+                }, 80);
+
+                if (this.slideTimer) clearTimeout(this.slideTimer);
+                this.slideTimer = setTimeout(() => {
+                    this.playSlide(this.currentSlideIndex + 1);
+                }, media.duration * 1000);
+            },
+
+            setupKeyboardEvents: function() {
+                let spacePresses = 0;
+                let spaceTimer = null;
+
+                window.addEventListener('keydown', (e) => {
+                    if (e.code === 'Space') {
+                        spacePresses++;
+                        clearTimeout(spaceTimer);
+                        if (spacePresses >= 3) {
+                            this.closeSlideshow();
+                            spacePresses = 0;
+                            this.showToast("Keluar dari Mode Kiosk.", "info");
+                        }
+                        spaceTimer = setTimeout(() => spacePresses = 0, 1000);
+                    }
+                    if (e.code === 'Escape') {
+                        this.closeSlideshow();
+                    }
+                });
+
+                // Auto-hide HUD on idle
+                const hud = document.getElementById('slideshowHUD');
+                const pingHUD = () => {
+                    hud.style.opacity = '1';
+                    clearTimeout(this.hudTimer);
+                    this.hudTimer = setTimeout(() => {
+                        hud.style.opacity = '0';
+                    }, 3000);
+                };
+                window.addEventListener('mousemove', pingHUD);
+                window.addEventListener('touchstart', pingHUD);
+            },
+
+            showToast: function(message, type = "info") {
                 const container = document.getElementById('toastContainer');
-                const t = document.createElement('div');
-                t.className = `px-4 py-3 rounded-lg border shadow-xl text-sm font-medium transition-transform transform translate-x-full ${type === 'error' ? 'bg-red-900/90 border-red-700 text-white' : (type === 'success' ? 'bg-emerald-900/90 border-emerald-700 text-white' : 'bg-slate-800/90 border-slate-700 text-white')}`;
-                t.textContent = msg;
-                container.appendChild(t);
-                setTimeout(() => t.classList.remove('translate-x-full'), 10);
-                setTimeout(() => { t.classList.add('translate-x-full'); setTimeout(() => t.remove(), 300); }, 3500);
+                const toast = document.createElement('div');
+                let bg = "bg-slate-900 border-slate-700 text-slate-200";
+                if (type === "success") bg = "bg-emerald-950/90 border-emerald-500/50 text-emerald-200";
+                if (type === "error") bg = "bg-red-950/90 border-red-500/50 text-red-200";
+                if (type === "info") bg = "bg-cyan-950/90 border-cyan-500/50 text-cyan-200";
+
+                toast.className = `px-4 py-2.5 rounded-xl border text-xs font-semibold backdrop-blur shadow-xl transition-all duration-300 transform translate-y-2 opacity-0 flex items-center gap-2 ${bg}`;
+                toast.innerHTML = `<i class="ph-bold ${type === 'error' ? 'ph-warning-circle' : 'ph-info'} text-base"></i><span>${message}</span>`;
+                container.appendChild(toast);
+
+                setTimeout(() => {
+                    toast.classList.remove('translate-y-2', 'opacity-0');
+                }, 10);
+
+                setTimeout(() => {
+                    toast.classList.add('opacity-0', 'translate-y-2');
+                    setTimeout(() => toast.remove(), 300);
+                }, 3500);
             }
         };
 
-        window.onload = () => App.init();
+        window.addEventListener('DOMContentLoaded', () => {
+            KioskApp.init();
+        });
     </script>
 </body>
 </html>
