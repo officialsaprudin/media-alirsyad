@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Omniscient Media Kiosk</title>
-    <link rel="icon" type="image/png" href="LOGO MI.png">
+        <link rel="icon" type="image/png" href="LOGO MI.png">
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -47,7 +47,7 @@
 
     <script>
         // SAKLAR MODE: true = Mode Preview (Mock Data lokal), false = Terhubung ke Firebase Cloud
-        const is_preview = false;
+        const is_preview = true;
     </script>
 
     <header class="sticky top-0 z-40 glass-panel border-b border-slate-800/80 px-4 sm:px-8 py-3.5 flex flex-wrap justify-between items-center gap-4">
@@ -231,27 +231,17 @@
     </main>
 
     <!-- SLIDESHOW KIOSK FULLSCREEN (DOUBLE-BUFFERED) -->
-    <div id="viewSlideshow" class="fixed inset-0 bg-black z-50 hidden flex items-center justify-center overflow-hidden select-none">
+    <div id="viewSlideshow" class="fixed inset-0 bg-black z-50 hidden flex items-center justify-center overflow-hidden select-none" ondblclick="KioskApp.closeSlideshow()" title="Klik 2x atau tekan Esc untuk keluar">
         <!-- Buffer A -->
         <div id="bufferA" class="media-crossfade absolute inset-0 w-full h-full flex items-center justify-center opacity-0 pointer-events-auto"></div>
         <!-- Buffer B -->
         <div id="bufferB" class="media-crossfade absolute inset-0 w-full h-full flex items-center justify-center opacity-0 pointer-events-auto"></div>
 
-        <!-- HUD Layer -->
-        <div id="slideshowHUD" class="absolute top-0 left-0 right-0 p-6 flex justify-between items-center bg-gradient-to-b from-black/80 via-black/30 to-transparent pointer-events-none transition-opacity duration-500 z-30">
-            <div>
-                <h2 id="hudTitle" class="text-lg font-bold text-white drop-shadow-md">Media Kiosk</h2>
-                <div class="flex items-center gap-2 mt-0.5">
-                    <span id="hudBadgeType" class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-cyan-900/80 text-cyan-300 border border-cyan-500/30">IFRAME</span>
-                    <span id="hudStatus" class="text-xs text-slate-300 font-mono">Rotasi Normal</span>
-                </div>
-            </div>
-            <div class="text-right pointer-events-auto">
-                <button onclick="KioskApp.closeSlideshow()" class="px-3.5 py-1.5 rounded-lg bg-black/60 hover:bg-red-950 text-slate-300 hover:text-red-300 border border-white/10 text-xs font-semibold backdrop-blur flex items-center gap-1.5 transition-all">
-                    <i class="ph-bold ph-x"></i> Keluar (Esc)
-                </button>
-                <p class="text-[10px] text-slate-400 mt-1">Tekan Spasi 3x / Esc untuk Admin</p>
-            </div>
+        <!-- HUD Layer (Disembunyikan sepenuhnya agar tampilan bersih tanpa menghalangi konten media) -->
+        <div id="slideshowHUD" class="hidden">
+            <h2 id="hudTitle"></h2>
+            <span id="hudBadgeType"></span>
+            <span id="hudStatus"></span>
         </div>
 
         <!-- Progress Bar -->
@@ -943,18 +933,6 @@
                         this.closeSlideshow();
                     }
                 });
-
-                // Auto-hide HUD on idle
-                const hud = document.getElementById('slideshowHUD');
-                const pingHUD = () => {
-                    hud.style.opacity = '1';
-                    clearTimeout(this.hudTimer);
-                    this.hudTimer = setTimeout(() => {
-                        hud.style.opacity = '0';
-                    }, 3000);
-                };
-                window.addEventListener('mousemove', pingHUD);
-                window.addEventListener('touchstart', pingHUD);
             },
 
             showToast: function(message, type = "info") {
