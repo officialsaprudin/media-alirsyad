@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Omniscient Media Kiosk</title>
-        <link rel="icon" type="image/png" href="LOGO MI.png">
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -236,6 +235,11 @@
         <div id="bufferA" class="media-crossfade absolute inset-0 w-full h-full flex items-center justify-center opacity-0 pointer-events-auto"></div>
         <!-- Buffer B -->
         <div id="bufferB" class="media-crossfade absolute inset-0 w-full h-full flex items-center justify-center opacity-0 pointer-events-auto"></div>
+
+        <!-- Tombol Gerigi Menu Kiosk (Khusus TV / Layar Sentuh) -->
+        <button onclick="KioskApp.closeSlideshow()" title="Buka Pengaturan (Keluar Kiosk)" class="absolute top-4 right-4 z-40 p-2.5 rounded-xl bg-slate-900/50 hover:bg-slate-900/90 text-white/50 hover:text-white backdrop-blur-md border border-white/10 opacity-30 hover:opacity-100 transition-all active:scale-90 cursor-pointer shadow-lg">
+            <i class="ph-bold ph-gear text-2xl"></i>
+        </button>
 
         <!-- HUD Layer (Disembunyikan sepenuhnya agar tampilan bersih tanpa menghalangi konten media) -->
         <div id="slideshowHUD" class="hidden">
@@ -915,19 +919,12 @@
             },
 
             setupKeyboardEvents: function() {
-                let spacePresses = 0;
-                let spaceTimer = null;
-
                 window.addEventListener('keydown', (e) => {
-                    if (e.code === 'Space') {
-                        spacePresses++;
-                        clearTimeout(spaceTimer);
-                        if (spacePresses >= 3) {
-                            this.closeSlideshow();
-                            spacePresses = 0;
-                            this.showToast("Keluar dari Mode Kiosk.", "info");
-                        }
-                        spaceTimer = setTimeout(() => spacePresses = 0, 1000);
+                    // Kombinasi PC: Ctrl + Spasi (atau Cmd + Spasi di Mac)
+                    if ((e.ctrlKey || e.metaKey) && e.code === 'Space') {
+                        e.preventDefault();
+                        this.closeSlideshow();
+                        this.showToast("Keluar dari Mode Kiosk (Ctrl + Spasi).", "info");
                     }
                     if (e.code === 'Escape') {
                         this.closeSlideshow();
